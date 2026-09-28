@@ -13,6 +13,20 @@ return new class extends Migration
     {
         Schema::create('pedidos', function (Blueprint $table) {
             $table->id();
+            
+            $table->date('fecha');
+            $table->string('nota');
+    //se agraga cliente y direccion para no depender de cliente_id para mostrar los campos
+            $table->string('cliente');
+            $table->string('direccion');
+            
+            $table->decimal('total',10,2);
+            $table->boolean('pagado')->default(false);
+
+            $table->foreignId('usuario_id')->constrained('users');
+            $table->foreignId('cliente_id')->constrained('clientes');
+
+
             $table->timestamps();
         });
     }
