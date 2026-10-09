@@ -6,7 +6,9 @@ use App\Models\Producto;
 use App\Models\Proveedor;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
-use App\Http\Requests\ProductoRequest;
+use Illuminate\Support\Facades\Storage;
+use App\Http\Requests\Producto\ProductoRequest;
+use App\Http\Requests\Producto\UpdateRequest;
 class ProductoController extends Controller
 {
     /**
@@ -14,11 +16,13 @@ class ProductoController extends Controller
      */
     public function index()
     {
-        $productos = Producto::with('proveedor')->get();
-        return Inertia::render('Productos/Index',[
-            'productos'=>$productos
+       $productos = Producto::with('proveedor')
+        ->where('activo', true)
+        ->get();
+
+        return Inertia::render('Productos/Index', [
+            'productos' => $productos,
         ]);
-        //
     }
 
     /**
@@ -38,16 +42,19 @@ class ProductoController extends Controller
     public function store(ProductoRequest $request)
     {
         //
-        /*$datos = $request->validate([
-            'nombre'=>'required|string|max:255',
-            'precio'=>'required|numeric',
-            'costo'=>'required|numeric',
-            'stock'=>'required|integer',
-            //'imagen'=>'nullable|image|max:2048',
-            'proveedor_id'=>'required|exists:proveedors,id'
-        ]);*/
-        //dd($request->validated());
-        Producto::create($request->validated());
+        $data = $request -> only(['nombre','precio','costo','stock','proveedor_id']);
+        
+        $data['imagen'] = null;
+        
+        if ($request->hasFile('imagen')) {
+            $file = $request->file('imagen');
+            $data['imagen'] = $file->store('productosImagenes', 'public');
+        }
+
+        
+        
+        Producto::create($data);
+        
         return redirect()
             ->route('productos.index')
             ->with('success', 'Producto creado correctamente.');
@@ -61,37 +68,64 @@ class ProductoController extends Controller
         //
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Producto $id)
+   //como estamos usando route model binding, podemos cambiar el tipo de dato del parámetro $id a Producto 
+   //y Laravel se encargará de buscar el producto por su id y pasarlo como parámetro a la función edit
+    public function edit(Producto $producto)
     {
-        //
-        echo $id;
-        $id->update([
-            'nombre'=>'producto1',
-            'precio'=>'80',
-            'costo'=>'30',
-            'stock'=>'3',
-            //'imagen'=>'/apple-touch-icon.png',
-            //'proveedor_id'=>'1',
+        $producto->load('proveedor');
+
+        return Inertia::render('Productos/Edit', [
+            'producto' => $producto,
+            'proveedores' => Proveedor::pluck('nombre', 'id'),
         ]);
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
-    {
-        //
+    public function update(UpdateRequest $request, Producto $producto)
+{
+    $data = $request->only([
+        'nombre',
+        'precio',
+        'costo',
+        'stock',
+        'proveedor_id',
+    ]);
+
+    if ($request->hasFile('imagen')) {
+        $file = $request->file('imagen');
+
+        $data['imagen'] = $file->store(
+            'productosImagenes',
+            'public'
+        );
+
+        if ($producto->imagen) {
+            // Eliminar la imagen anterior si existe
+            \Storage::disk('public')->delete($producto->imagen);
+        }
+    
     }
+
+    $producto->update($data);
+
+    return redirect()
+        ->route('productos.index')
+        ->with('success', 'Producto actualizado correctamente.');
+}
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Producto $id)
-    {
-        $id->delete();
-        //
-    }
+    public function destroy(Producto $producto)
+{
+    $producto->update([
+        'activo' => false,
+    ]);
+
+    return redirect()
+        ->route('productos.index')
+        ->with('success', 'Producto desactivado correctamente.');
+}
 }

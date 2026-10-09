@@ -56,6 +56,10 @@ export default function Index({ proveedores }: Props) {
                                     <th className="px-6 py-4 font-semibold text-gray-700 dark:text-gray-200">
                                         Teléfono
                                     </th>
+
+                                    <th className="px-6 py-4 font-semibold text-gray-700 dark:text-gray-200">
+                                        Acciones
+                                    </th>
                                 </tr>
                             </thead>
 
@@ -80,6 +84,22 @@ export default function Index({ proveedores }: Props) {
 
                                             <td className="px-6 py-4 text-gray-600 dark:text-gray-400">
                                                 {proveedor.telefono}
+                                            </td>
+
+                                            <td className="px-6 py-4 text-gray-600 dark:text-gray-400 whitespace-nowrap">
+                                                <div  className="flex items-center gap-2">
+                                                    <Button asChild>
+                                                        <Link href={`/proveedores/${proveedor.id}/edit`}>
+                                                            Editar
+                                                        </Link>
+                                                    </Button>
+
+                                                    <Button asChild>
+                                                        <Link href={`/proveedores/${proveedor.id}/delete`}>
+                                                            Eliminar
+                                                        </Link>
+                                                    </Button>
+                                                </div>
                                             </td>
                                         </tr>
                                     ))

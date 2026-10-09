@@ -1,18 +1,18 @@
 <?php
 
-namespace App\Http\Requests;
+namespace App\Http\Requests\Producto;
 
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
-
-class ProductoRequest extends FormRequest
+use Illuminate\Support\Facades\Auth;
+class UpdateRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
      */
     public function authorize(): bool
     {
-        return true;
+       return Auth::check();
     }
 
     /**
@@ -23,11 +23,11 @@ class ProductoRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'nombre'=>'required|string|max:255',
+             'nombre'=>'required|string|max:255',
             'precio'=>'required|numeric',
             'costo'=>'required|numeric',
             'stock'=>'required|integer',
-            'imagen'=>'required|string|max:255',//'nullable|image|max:2048',
+            'imagen'=>'nullable|mimes:jpeg,png,jpg|max:2048',
             'proveedor_id'=>'required|exists:proveedores,id'
         ];
     }
