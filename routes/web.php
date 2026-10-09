@@ -27,6 +27,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/productos/{producto}/edit',[ProductoController::class,'edit'])->name('productos.edit');
     Route::put('/productos/{producto}',[ProductoController::class,'update'])->name('productos.update');
     Route::delete('/productos/{producto}',[ProductoController::class,'destroy'])->name('productos.destroy');
-
+    //no seria mejor utilizar: 
+    //Route::resource('productos', ProductoController::class);
+    //para que quede mas limpio el codigo? (crea las rutas por defecto, las puedes ver con php artisan route:list)
 });
 require __DIR__.'/settings.php';

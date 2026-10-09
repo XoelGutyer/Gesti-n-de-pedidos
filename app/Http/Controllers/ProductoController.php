@@ -7,7 +7,7 @@ use App\Models\Proveedor;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Storage;
-use App\Http\Requests\Producto\ProductoRequest;
+use App\Http\Requests\Producto\StoreRequest;
 use App\Http\Requests\Producto\UpdateRequest;
 class ProductoController extends Controller
 {
@@ -39,7 +39,7 @@ class ProductoController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(ProductoRequest $request)
+    public function store(StoreRequest $request)
     {
         //
         $data = $request -> only(['nombre','precio','costo','stock','proveedor_id']);
@@ -103,7 +103,7 @@ class ProductoController extends Controller
 
         if ($producto->imagen) {
             // Eliminar la imagen anterior si existe
-            \Storage::disk('public')->delete($producto->imagen);
+            Storage::disk('public')->delete($producto->imagen);
         }
     
     }

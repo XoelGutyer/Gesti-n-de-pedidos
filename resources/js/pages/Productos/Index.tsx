@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Head, Link } from "@inertiajs/react";
+import { Head, Link, router } from "@inertiajs/react";
 import { Plus } from "lucide-react";
 
 interface Producto {
@@ -13,8 +13,18 @@ interface Producto {
         nombre: string;
     };
 }
-
-export default function Index({ productos }: { productos: Producto[] }) {
+interface Props {
+    productos: Producto[];
+    flash?: {
+        success?: string;
+    };
+}
+export default function Index({ productos, flash }: Props) {
+    const eliminar = (id: number) => {
+        if (confirm('¿Está seguro de eliminar este producto?')) {
+            router.delete(`/productos/${id}`);
+        }
+    };
     return (
         <div>
             <div className="w-full max-w-7xl mx-auto mt-10 p-6 space-y-6">
@@ -26,6 +36,13 @@ export default function Index({ productos }: { productos: Producto[] }) {
                         <h1 className="text-2xl font-bold text-white">Productos</h1>
                         <h4 className="text-sm text-white">Lista de productos registrados en el sistema.</h4>
                     </div>
+
+                    {flash?.success && (
+                        <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative" role="alert">
+                            <span className="block sm:inline">{flash.success}</span>
+                        </div>
+                    )}
+
                     <Button asChild>
                         <Link href="/productos/create">
                             <Plus />
@@ -64,7 +81,7 @@ export default function Index({ productos }: { productos: Producto[] }) {
                                             <td className="px-6 py-4 font-medium text-gray-900">{producto.precio}</td>
                                             {/*<td className="px-6 py-4 font-medium text-gray-900">{producto.costo}</td>*/}
                                             <td className="px-6 py-4 font-medium text-gray-900">{producto.stock}</td>
-                                            {/*<td className="px-6 py-4 font-medium text-gray-900">{producto.imagen}</td>*/}
+                                            {/*<td className="px-6 py-4 font-medium text-gray-900">{producto.imagen && <img src={`/storage/${producto.imagen}`} alt={producto.nombre} className="w-16 h-16 object-cover" />}</td>*/}
                                             <td className="px-6 py-4 font-medium text-gray-900">{producto.proveedor.nombre}</td>
                                             <td className="px-6 py-4 text-gray-600 dark:text-gray-400 whitespace-nowrap">
                                                  <div className="flex items-center gap-2">
@@ -92,9 +109,9 @@ export default function Index({ productos }: { productos: Producto[] }) {
                                 )}
                             </tbody>
                         </table>
-                    </div>    
+                    </div>
                 </div>
-                
+
             </div>
         </div>
     )

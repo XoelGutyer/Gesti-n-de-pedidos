@@ -99,6 +99,7 @@ export default function create({ proveedores }: Props) {
                         <label className="text-sm font-medium">Imagen</label>
                         // el campo de imagen es de tipo file
                         <input
+                            accept="image/*" 
                             type="file"
                             className="w-full px-3 py-2 border border-gray-500 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                             placeholder="URL de la imagen del producto"
