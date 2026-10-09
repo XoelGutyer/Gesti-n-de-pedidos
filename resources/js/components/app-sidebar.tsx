@@ -1,5 +1,5 @@
 import { Link } from '@inertiajs/react';
-import { BookOpen, FolderGit2, LayoutGrid, Truck } from 'lucide-react';
+import { BookOpen, FolderGit2, LayoutGrid, Package, Truck } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
@@ -27,6 +27,11 @@ const mainNavItems: NavItem[] = [
         title: 'Proveedores',
         href: '/proveedores',
         icon: Truck,
+    },
+    {
+    title: 'Productos',
+    href: '/productos',
+    icon: Package,
     },
 ];
 

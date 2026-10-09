@@ -1,18 +1,18 @@
 <?php
 
-namespace App\Http\Requests;
+namespace App\Http\Requests\Producto;
 
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
-
-class ProductoRequest extends FormRequest
+use Illuminate\Support\Facades\Auth;
+class StoreRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
      */
     public function authorize(): bool
     {
-        return true;
+        return Auth::check(); // Solo permite la solicitud si el usuario está autenticado
     }
 
     /**
@@ -27,7 +27,7 @@ class ProductoRequest extends FormRequest
             'precio' => 'required|numeric',
             'costo'  => 'required|numeric',
             'stock'  => 'required|integer',
-            'imagen' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',//'nullable|image|max:2048',
+            'imagen'=>'nullable|mimes:jpeg,png,jpg|max:2048',
             'proveedor_id'=> 'required|exists:proveedores,id'
         ];
     }
