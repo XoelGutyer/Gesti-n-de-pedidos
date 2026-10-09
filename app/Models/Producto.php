@@ -13,6 +13,7 @@ class Producto extends Model
         'costo',
         'stock',
         'imagen',
+        'activo',
         'proveedor_id',
     ];
 

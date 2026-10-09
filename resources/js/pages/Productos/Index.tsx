@@ -75,7 +75,7 @@ export default function Index({ productos }: { productos: Producto[] }) {
                                                     </Button>
 
                                                     <Button variant="destructive" asChild>
-                                                        <Link href={`/productos/${producto.id}/delete`}>
+                                                        <Link href={`/productos/${producto.id}`} method="delete">
                                                             Eliminar
                                                         </Link>
                                                     </Button>
