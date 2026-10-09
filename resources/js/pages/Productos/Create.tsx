@@ -1,16 +1,27 @@
 import { useForm, Link } from "@inertiajs/react";
 import type { FormEvent } from 'react';
 import { Button } from '@/components/ui/button';
+import { StringToBoolean } from "class-variance-authority/types";
 interface Props {
     proveedores: Record<number,string>;
 }
-export default function create({ proveedores }: Props){
-    const {data, setData, post, processing, errors} = useForm({
+
+interface Producto {
+    nombre: string;
+    precio: number | string;
+    costo: number | string;
+    stock: number | string;
+    imagen: File | null;
+    proveedor_id: number | string;
+}
+
+export default function Create({ proveedores }: Props){
+    const {data, setData, post, processing, errors} = useForm<Producto>({
         nombre: '',
         precio: '',
         costo: '',
         stock: '',
-        imagen: '',
+        imagen: null,
         proveedor_id: '',
     })
     const submit = (e: FormEvent) => {
@@ -78,12 +89,15 @@ export default function create({ proveedores }: Props){
                     <div className="flex flex-col gap-1.5">
                         <label className="text-sm font-medium">Imagen</label>
                         <input
-                            type="text"
-                            value={data.imagen}
+                            type="file"
+                            //value={data.imagen}
+                            accept="image/*"
+                            required
                             className="w-full px-3 py-2 border border-gray-500 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            placeholder="URL de la imagen del producto"
-                            onChange={(e) => setData('imagen',e.target.value)}
-                        />
+                            //placeholder="URL de la imagen del producto"
+                            onChange={(e) =>{if (e.target.files && e.target.files[0]) {
+                                setData('imagen', e.target.files[0]);
+                            }}} />
                         {errors.imagen && <div className="mt-1 text-sm text-red-500">{errors.imagen}</div>}
                     </div>
 

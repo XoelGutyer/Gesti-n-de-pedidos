@@ -6,7 +6,7 @@ use App\Models\Producto;
 use App\Models\Proveedor;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
-use App\Http\Requests\ProductoRequest;
+use App\Http\Requests\StoreProductoRequest;
 class ProductoController extends Controller
 {
     /**
@@ -35,7 +35,7 @@ class ProductoController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(ProductoRequest $request)
+    public function store(StoreProductoRequest $request)
     {
         //
         /*$datos = $request->validate([
@@ -47,7 +47,15 @@ class ProductoController extends Controller
             'proveedor_id'=>'required|exists:proveedors,id'
         ]);*/
         //dd($request->validated());
-        Producto::create($request->validated());
+        
+        //Producto::create($request->validated());
+        $data = $request->validated();
+        if($request->hasFile('imagen')){
+            $file = $request->file('imagen');
+            $nombreImagen = $file->store('images', 'public');
+            $data['imagen'] = $nombreImagen;
+        }
+        Producto::create($data);
         return redirect()
             ->route('productos.index')
             ->with('success', 'Producto creado correctamente.');
@@ -64,34 +72,36 @@ class ProductoController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Producto $id)
+    public function edit(Producto $producto)
     {
-        //
-        echo $id;
-        $id->update([
-            'nombre'=>'producto1',
-            'precio'=>'80',
-            'costo'=>'30',
-            'stock'=>'3',
-            //'imagen'=>'/apple-touch-icon.png',
-            //'proveedor_id'=>'1',
+        //dd($producto);
+        return Inertia::render('Productos/Edit',[
+            'producto'=>$producto,
+            'proveedores'=> Proveedor::pluck('nombre','id')
         ]);
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(StoreProductoRequest $request, Producto $producto)
     {
         //
+        $producto->update($request->validated());
+        return redirect()
+            ->route('productos.index')
+            ->with('success', 'Producto actualizado correctamente.');
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Producto $id)
+    public function destroy(Producto $producto)
     {
-        $id->delete();
+        $producto->delete();
+        return redirect()
+            ->route('productos.index')
+            ->with('success', 'Producto eliminado correctamente.');
         //
     }
 }
