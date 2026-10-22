@@ -12,12 +12,13 @@ class ProveedorController extends Controller
      * Display a listing of the resource.
      */
     public function index()
-    {
-        //obtengo los proveedores y se lo paso a la vista en pages/Proveedores/index.tsx
-        $proveedores= Proveedor::all();
+{
+    $proveedores = Proveedor::where('activo', true)->get();
 
-        return Inertia::Render('Proveedores/Index',['proveedores' => $proveedores]);
-    }
+    return Inertia::render('Proveedores/Index', [
+        'proveedores' => $proveedores,
+    ]);
+}
 
     /**
      * Show the form for creating a new resource.
@@ -58,24 +59,45 @@ class ProveedorController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(string $id)
+    public function edit(Proveedor $proveedor)
     {
-        //
+        return Inertia::Render('Proveedores/Edit',[
+            'proveedor' => $proveedor
+        ]);
+
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(Request $request, Proveedor $proveedor)
     {
-        //
+        $datos = $request->validate([
+            'nombre' => 'required|string|max:255',
+            'email' => 'required|email|max:255',
+            'telefono' => 'required|string|max:50',
+        ]);
+
+        $proveedor->update($datos);
+
+        return redirect()
+            ->route('proveedores.index')
+            ->with('success', 'Proveedor actualizado correctamente.');
+    
+        
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy(Proveedor $proveedor)
     {
-        //
+         $proveedor->update([
+        'activo' => false,
+    ]);
+
+    return redirect()
+        ->route('proveedores.index')
+        ->with('success', 'Proveedor eliminado correctamente.');
     }
 }

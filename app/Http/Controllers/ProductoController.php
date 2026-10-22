@@ -9,6 +9,8 @@ use Inertia\Inertia;
 use Illuminate\Support\Facades\Storage;
 use App\Http\Requests\Producto\StoreRequest;
 use App\Http\Requests\Producto\UpdateRequest;
+use Barryvdh\DomPDF\Facade\Pdf;
+
 class ProductoController extends Controller
 {
     /**
@@ -39,26 +41,33 @@ class ProductoController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreRequest $request)
-    {
-        //
-        $data = $request -> only(['nombre','precio','costo','stock','proveedor_id']);
-        
-        $data['imagen'] = null;
-        
-        if ($request->hasFile('imagen')) {
-            $file = $request->file('imagen');
-            $data['imagen'] = $file->store('productosImagenes', 'public');
-        }
 
-        
-        
-        Producto::create($data);
-        
-        return redirect()
-            ->route('productos.index')
-            ->with('success', 'Producto creado correctamente.');
+public function store(StoreRequest $request)
+{
+    $data = $request->validate([
+        'nombre' => 'required|string|max:255',
+        'precio' => 'required|numeric|between:0,999999999.99',
+        'costo' => 'required|numeric|between:0,999999999.99',
+        'stock' => 'required|integer|between:0,1000000',
+        'proveedor_id' => 'required|integer|exists:proveedores,id',
+        'imagen' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+    ]);
+
+    $data['imagen'] = null;
+
+    if ($request->hasFile('imagen')) {
+        $data['imagen'] = $request
+            ->file('imagen')
+            ->store('productosImagenes', 'public');
     }
+
+    Producto::create($data);
+
+    return redirect()
+        ->route('productos.index')
+        ->with('success', 'Producto creado correctamente.');
+}
+
 
     /**
      * Display the specified resource.
@@ -128,4 +137,43 @@ class ProductoController extends Controller
         ->route('productos.index')
         ->with('success', 'Producto desactivado correctamente.');
 }
+
+ public function pdf()
+    {
+        $productos = Producto::with('proveedor')
+            ->where('activo', true)
+            ->orderBy('nombre')
+            ->get();
+
+        // Preparar la ruta local de cada imagen.
+        // Se asume que las imágenes están en el disco public de Laravel.
+        foreach ($productos as $producto) {
+            $producto->imagen_pdf = null;
+
+            if (
+                $producto->imagen &&
+                Storage::disk('public')->exists($producto->imagen)
+            ) {
+                $producto->imagen_pdf = Storage::disk('public')
+                    ->path($producto->imagen);
+            }
+        }
+
+        // Agrupar los productos por proveedor.
+        $proveedores = $productos
+            ->sortBy(fn ($producto) =>
+                mb_strtolower($producto->proveedor?->nombre ?? 'Sin proveedor')
+                . '|'
+                . mb_strtolower($producto->nombre)
+            )
+            ->groupBy(fn ($producto) =>
+                $producto->proveedor?->nombre ?? 'Sin proveedor'
+            );
+
+        $pdf = Pdf::loadView('pdf.catalogo', [
+            'proveedores' => $proveedores,
+        ])->setPaper('a4', 'portrait');
+
+        return $pdf->stream('catalogo-productos.pdf');
+    }
 }

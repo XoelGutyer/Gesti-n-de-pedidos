@@ -95,7 +95,8 @@ export default function Index({ proveedores }: Props) {
                                                     </Button>
 
                                                     <Button variant="destructive" asChild>
-                                                        <Link href={`/proveedores/${proveedor.id}/delete`}>
+                                                        <Link href={`/proveedores/${proveedor.id}`}
+                                                        method="delete">
                                                             Eliminar
                                                         </Link>
                                                     </Button>
