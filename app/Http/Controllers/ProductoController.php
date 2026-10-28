@@ -16,14 +16,52 @@ class ProductoController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-       $productos = Producto::with('proveedor')
-        ->where('activo', true)
-        ->get();
+        $buscar = $request->query('buscar');
+        $proveedor = $request->input('proveedor');
+        //ordenamiento
+        $orden = $request->input('orden', 'nombre'); //obtenemos lo que tenga el input orden
+        $direccion = $request->input('direccion', 'asc'); //obtenemos lo que tenga el input direccion
+
+        $camposPermitidos = ['nombre', 'precio', 'costo'];
+
+        $porPagina = (int) $request->input('por_pagina', 5);
+        if (!in_array($porPagina, [5, 10, 20], true)) {
+            $porPagina = 5;
+        }
+
+        if (!in_array($orden, $camposPermitidos, true)) {
+            $orden = 'nombre'; //por defecto ordenado por nombre
+        }
+        if (!in_array($direccion, ['asc', 'desc'], true)) {
+            $direccion = 'asc'; // por defecto ordenado de manera ascendente
+        }
+
+        $productos = Producto::with('proveedor')
+            ->where('activo', true)
+            ->when($buscar !== '', function ($query) use ($buscar) {
+                $query->where('nombre', 'like', "%{$buscar}%");
+            })
+            ->when($request->filled('proveedor'), function ($query) use ($proveedor) {
+                $query->whereHas('proveedor', function ($q) use ($proveedor) {
+                    $q->where('proveedores.id', $proveedor);
+                });
+            })
+            ->orderBy($orden, $direccion)
+            ->paginate($porPagina)
+            ->withQueryString();
 
         return Inertia::render('Productos/Index', [
             'productos' => $productos,
+            'proveedores' => Proveedor::pluck('nombre', 'id'),
+            'filtros' => [
+                'buscar' => $buscar,
+                'proveedor' => $proveedor,
+                'orden' => $orden,
+                'direccion' => $direccion,
+                'por_pagina' => $porPagina,
+            ],
         ]);
     }
 
@@ -33,8 +71,8 @@ class ProductoController extends Controller
     public function create()
     {
         //dd (Producto::get());
-        return Inertia::render('Productos/Create',[
-        'proveedores'=> Proveedor::pluck('nombre','id')
+        return Inertia::render('Productos/Create', [
+            'proveedores' => Proveedor::pluck('nombre', 'id')
         ]);
     }
 
@@ -77,8 +115,8 @@ public function store(StoreRequest $request)
         //
     }
 
-   //como estamos usando route model binding, podemos cambiar el tipo de dato del parámetro $id a Producto 
-   //y Laravel se encargará de buscar el producto por su id y pasarlo como parámetro a la función edit
+    //como estamos usando route model binding, podemos cambiar el tipo de dato del parámetro $id a Producto 
+    //y Laravel se encargará de buscar el producto por su id y pasarlo como parámetro a la función edit
     public function edit(Producto $producto)
     {
         $producto->load('proveedor');
@@ -93,45 +131,44 @@ public function store(StoreRequest $request)
      * Update the specified resource in storage.
      */
     public function update(UpdateRequest $request, Producto $producto)
-{
-    $data = $request->only([
-        'nombre',
-        'precio',
-        'costo',
-        'stock',
-        'proveedor_id',
-    ]);
+    {
+        $data = $request->only([
+            'nombre',
+            'precio',
+            'costo',
+            'stock',
+            'proveedor_id',
+        ]);
 
-    if ($request->hasFile('imagen')) {
-        $file = $request->file('imagen');
+        if ($request->hasFile('imagen')) {
+            $file = $request->file('imagen');
 
-        $data['imagen'] = $file->store(
-            'productosImagenes',
-            'public'
-        );
+            $data['imagen'] = $file->store(
+                'productosImagenes',
+                'public'
+            );
 
-        if ($producto->imagen) {
-            // Eliminar la imagen anterior si existe
-            Storage::disk('public')->delete($producto->imagen);
+            if ($producto->imagen) {
+                // Eliminar la imagen anterior si existe
+                Storage::disk('public')->delete($producto->imagen);
+            }
         }
-    
+
+        $producto->update($data);
+
+        return redirect()
+            ->route('productos.index')
+            ->with('success', 'Producto actualizado correctamente.');
     }
-
-    $producto->update($data);
-
-    return redirect()
-        ->route('productos.index')
-        ->with('success', 'Producto actualizado correctamente.');
-}
 
     /**
      * Remove the specified resource from storage.
      */
     public function destroy(Producto $producto)
-{
-    $producto->update([
-        'activo' => false,
-    ]);
+    {
+        $producto->update([
+            'activo' => false,
+        ]);
 
     return redirect()
         ->route('productos.index')

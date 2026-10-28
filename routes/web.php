@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ClienteController;
 use App\Http\Controllers\ProductoController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ProveedorController;
@@ -40,6 +41,7 @@ Route::middleware(['auth', 'verified','role:admin,preventista'])->group(function
     //Route::resource('productos', ProductoController::class);
     //para que quede mas limpio el codigo? (crea las rutas por defecto, las puedes ver con php artisan route:list)
     //si para las proximas rutas que hagamos utilicemos es solo para aprender bien el flujo de la informacion
+    Route::resource('clientes', ClienteController::class);
 });
 
 Route::middleware(['auth','role:admin,cliente'])->group(function () {
@@ -64,6 +66,11 @@ Route::middleware('auth')->group(function () {
         '/papelera/proveedores/{proveedor}/activar',
         [PapeleraController::class, 'activarProveedor']
     )->name('papelera.proveedores.activar');
+
+    Route::put(
+        '/papelera/clientes/{cliente}/restaurar',
+        [PapeleraController::class,'restaurarCliente']
+    )->name('papelera.clientes.activar');
 });
 
 require __DIR__.'/settings.php';

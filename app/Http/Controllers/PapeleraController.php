@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-
+use App\Models\Cliente;
 use App\Models\Producto;
 use App\Models\Proveedor;
 use Inertia\Inertia;
@@ -21,9 +21,12 @@ class PapeleraController extends Controller
             ->orderBy('nombre')
             ->get(['id', 'nombre']);
 
+        $clientes = Cliente::onlyTrashed()->latest()->get();
+
         return Inertia::render('Papelera/Index', [
             'productos' => $productos,
             'proveedores' => $proveedores,
+            'clientes' => $clientes,
         ]);
     }
 
@@ -44,6 +47,15 @@ class PapeleraController extends Controller
         $proveedor->update(['activo' => true]);
 
         return back()->with(
+            'success',
+            'Proveedor reactivado correctamente.'
+        );
+    }
+
+    public function restaurarCliente(int $id){
+        $cliente = Cliente::withTrashed()->findOrFail($id);
+        $cliente->restore();
+        return back()->with(            
             'success',
             'Proveedor reactivado correctamente.'
         );
