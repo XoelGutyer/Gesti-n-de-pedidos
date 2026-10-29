@@ -15,13 +15,24 @@ type Proveedor = {
     nombre: string;
 };
 
+interface Cliente {
+    id: number;
+    nombre: string;
+    direccion: string;
+    email: string;
+    dia:string;
+    celular: string;
+    //usuario: Usuario | null;
+}
+
 type Props = {
     productos: Producto[];
     proveedores: Proveedor[];
+    clientes: Cliente[];
 };
 
-export default function Index({ productos, proveedores }: Props) {
-    const [pestana, setPestana] = useState<'productos' | 'proveedores'>(
+export default function Index({ productos, proveedores, clientes }: Props) {
+    const [pestana, setPestana] = useState<'productos' | 'proveedores' | 'clientes'>(
         'productos'
     );
 
@@ -40,6 +51,13 @@ export default function Index({ productos, proveedores }: Props) {
             preserveScroll: true,
         });
     };
+
+    const restaurarCliente = (id:number) => {
+        if (!confirm('¿Querés reactivar este cliente?')) return;
+        router.put(`/papelera/clientes/${id}/restaurar`, {}, {
+            preserveScroll: true,
+        });
+    }
 
     return (
         <>
@@ -93,6 +111,22 @@ export default function Index({ productos, proveedores }: Props) {
                                 {proveedores.length}
                             </span>
                         </button>
+
+                        <button
+                            type="button"
+                            onClick={() => setPestana('clientes')}
+                            className={`flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-medium ${
+                                pestana === 'clientes'
+                                    ? 'border-primary text-primary'
+                                    : 'border-transparent text-muted-foreground hover:text-foreground'
+                            }`}
+                        >
+                            <Truck className="h-4 w-4" />
+                            clientes
+                            <span className="rounded-full bg-muted px-2 py-0.5 text-xs">
+                                {clientes.length}
+                            </span>
+                        </button>                        
                     </div>
 
                     {pestana === 'productos' && (
@@ -209,6 +243,89 @@ export default function Index({ productos, proveedores }: Props) {
                                                             type="button"
                                                             onClick={() =>
                                                                 activarProveedor(proveedor.id)
+                                                            }
+                                                            className="inline-flex items-center gap-2 rounded-md border px-3 py-2 font-medium hover:bg-muted"
+                                                        >
+                                                            <RotateCcw className="h-4 w-4" />
+                                                            Reactivar
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {pestana === 'clientes' && (
+                        <div className="overflow-hidden rounded-xl border bg-card">
+                            <div className="border-b p-4">
+                                <h2 className="font-semibold">
+                                    clientes desactivados
+                                </h2>
+                            </div>
+
+                            {clientes.length === 0 ? (
+                                <div className="p-10 text-center">
+                                    <Package className="mx-auto mb-3 h-10 w-10 text-muted-foreground" />
+                                    <p className="font-medium">
+                                        No hay clientes en la papelera
+                                    </p>
+                                    <p className="mt-1 text-sm text-muted-foreground">
+                                        Los clientes desactivados aparecerán aquí.
+                                    </p>
+                                </div>
+                            ) : (
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-sm">
+                                        <thead className="bg-muted/50">
+                                            <tr>
+                                                <th className="px-4 py-3 text-left font-medium">
+                                                    Nombre
+                                                </th>
+                                                <th className="px-4 py-3 text-left font-medium">
+                                                    Direccion
+                                                </th>
+                                                <th className="px-4 py-3 text-left font-medium">
+                                                    Email
+                                                </th>
+                                                <th className="px-4 py-3 text-left font-medium">
+                                                    Dia
+                                                </th>                                                
+                                                <th className="px-4 py-3 text-left font-medium">
+                                                    Celular
+                                                </th>                                                
+                                                <th className="px-4 py-3 text-right font-medium">
+                                                    Acción
+                                                </th>
+                                            </tr>
+                                        </thead>
+
+                                        <tbody className="divide-y">
+                                            {clientes.map((cliente) => (
+                                                <tr key={cliente.id}>
+                                                    <td className="px-4 py-3 font-medium">
+                                                        {cliente.nombre}
+                                                    </td>
+                                                    <td className="px-4 py-3">
+                                                        {cliente.direccion}
+                                                    </td>
+                                                    <td className="px-4 py-3">
+                                                        {cliente.email}
+                                                    </td>
+                                                    <td className="px-4 py-3">
+                                                        {cliente.dia}
+                                                    </td>
+                                                    <td className="px-4 py-3">
+                                                        {cliente.celular}
+                                                    </td>                                                    
+                                                    <td className="px-4 py-3 text-right">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() =>
+                                                                restaurarCliente(cliente.id)
                                                             }
                                                             className="inline-flex items-center gap-2 rounded-md border px-3 py-2 font-medium hover:bg-muted"
                                                         >

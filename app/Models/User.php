@@ -53,4 +53,8 @@ class User extends Authenticatable implements PasskeyUser
             'two_factor_confirmed_at' => 'datetime',
         ];
     }
+
+    public function cliente(){
+        return $this->hasOne(Cliente::class);
+    }
 }

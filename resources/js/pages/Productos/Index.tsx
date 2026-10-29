@@ -1,6 +1,27 @@
 import { Button } from "@/components/ui/button";
 import { Head, Link, router } from "@inertiajs/react";
-import { Plus } from "lucide-react";
+import { Plus, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { useState, type FormEvent } from 'react';
+
+interface ProductosPaginados {
+    data: Producto[];
+    current_page: number;
+    last_page: number;
+    per_page: number;
+    total: number;
+    from: number | null;
+    to: number | null;
+    prev_page_url: string | null;
+    next_page_url: string | null;
+}
+
+interface Filtros {
+    buscar: string;
+    proveedor: string,
+    orden: string,
+    direccion: string,
+    por_pagina: number;
+}
 
 interface Producto {
     id: number;
@@ -13,24 +34,73 @@ interface Producto {
         nombre: string;
     };
 }
+
 interface Props {
-    productos: Producto[];
+    productos: ProductosPaginados;
+    proveedores: Record<number, string>;
+    filtros: Filtros;
     flash?: {
         success?: string;
     };
 }
-export default function Index({ productos, flash }: Props) {
+export default function Index({ productos, proveedores, filtros, flash }: Props) {
     const eliminar = (id: number) => {
         if (confirm("¿Está seguro de eliminar este producto?")) {
             router.delete(`/productos/${id}`);
         }
     };
+    const aplicarfiltros = (e: FormEvent) => {
+        e.preventDefault();
+        router.get('/productos', {
+            buscar,
+            proveedor,
+            orden,
+            direccion,
+            por_pagina: porPagina,
+        }, { preserveState: true });
+    };
+    const [buscar, setBuscar] = useState(filtros.buscar ?? '');
+    const [proveedor, setProveedor] = useState(filtros.proveedor ?? '');
+
+    const [orden, setOrden] = useState(filtros.orden ?? 'nombre');
+    const [direccion, setDireccion] = useState(
+        filtros.direccion ?? 'asc'
+    );
+
+    const ordenarPor = (campo: string) => {
+        let nuevaDireccion = 'asc';
+        if (orden === campo && direccion === 'asc') {
+            nuevaDireccion = 'desc';
+        }
+        setOrden(campo);
+        setDireccion(nuevaDireccion);
+        router.get('/productos', {
+            buscar, //conservamos el filtro
+            proveedor,
+            orden: campo,
+            direccion: nuevaDireccion,
+            por_pagina: porPagina,
+        });
+    };
+
+    const indicadorOrden = (campo: string) => {
+        if (orden !== campo) {
+            return '';
+        }
+        return direccion === 'asc' ? ' ↑' : ' ↓';
+    };
+
+    const [porPagina, setPorPagina] = useState(
+        filtros.por_pagina ?? 5
+    );
+
     return (
         <div>
             <div className="w-full max-w-7xl mx-auto mt-10 p-6 space-y-6">
                 <Head>
                     <title>Listado de productos</title>
                 </Head>
+
                 <div className="flex justify-between items-center">
                     <div className="overflow-x-auto">
                         <h1 className="text-2xl font-bold text-white">
@@ -71,40 +141,74 @@ export default function Index({ productos, flash }: Props) {
                     </Button>
                 </div>
 
+                <form onSubmit={aplicarfiltros} className="flex flex-col md:flex-row items-end gap-4">
+                    <input
+                        type="text"
+                        value={buscar}
+                        onChange={(e) => setBuscar(e.target.value)}
+                        placeholder="Buscar Producto"
+                    />
+                    <select
+                        value={proveedor}
+                        onChange={(e) => setProveedor(e.target.value)}
+                    >
+                        <option value="">Todos los proveedores</option>
+                        {Object.entries(proveedores).map(([id, nombre]) => (
+                            <option key={id} value={id}>
+                                {id} - {nombre}
+                            </option>
+                        ))}
+                    </select>
+
+                    <label>
+                        Mostrar:
+                        <select
+                            value={porPagina}
+                            onChange={(e) => setPorPagina(Number(e.target.value))}
+                        >
+                            <option value={5}>5</option>
+                            <option value={10}>10</option>
+                            <option value={20}>20</option>
+                        </select>
+                        filas
+                    </label>
+
+                </form>
+
                 <div className="w-full rounded-xl shadow-sm bg-card border border-gray-200 overflow-hidden">
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm text-left text-gray-500">
                             <thead>
                                 <tr>
-                                    <th className="px-6 py-4 font-semibold text-white">
-                                        Imagen
+                                    <th className="px-6 py-4 font-semibold text-white ">Imagen</th>
+                                    <th onClick={() => ordenarPor('nombre')} className="px-6 py-4 font-semibold text-white cursor-pointer" >
+                                        <div className="flex items-center gap-1.5">
+                                            <span>nombre</span>
+                                            {/* Evaluamos qué icono mostrar según el estado actual */}
+                                            {orden !== 'nombre' ? (
+                                                // Si no se está ordenando por este campo, mostramos el icono neutral
+                                                < ArrowUpDown className="w-3.5 h-3.5 text-gray-400" />
+                                            ) : direccion === 'asc' ? (
+                                                // Si está en ascendente, flecha arriba en un color más oscuro/activo
+                                                <ArrowUp className="w-3.5 h-3.5 text-gray-700 font-bold" />
+                                            ) : (
+                                                // Si está en descendente, flecha abajo activa
+                                                <ArrowDown className="w-3.5 h-3.5 text-gray-700 font-bold" />
+                                            )}
+                                        </div>
                                     </th>
-                                    <th className="px-6 py-4 font-semibold text-white">
-                                        Nombre
-                                    </th>
-                                    <th className="px-6 py-4 font-semibold text-white">
-                                        Precio
-                                    </th>
-                                    {/*<th className="px-6 py-4 font-semibold text-white">Costo</th>*/}
-                                    <th className="px-6 py-4 font-semibold text-white">
-                                        Stock
-                                    </th>
+                                    <th onClick={() => ordenarPor('precio')} className="px-6 py-4 font-semibold text-white cursor-pointer">Precio {indicadorOrden('precio')}</th>
+                                    {/*<th onClick={() => ordenarPor('costo')} className="px-6 py-4 font-semibold text-white cursor-pointer">Costo {indicadorOrden('costo')}</th>*/}
+                                    <th className="px-6 py-4 font-semibold text-white">Stock</th>
                                     {/*<th className="px-6 py-4 font-semibold text-white">Imagen</th>*/}
-                                    <th className="px-6 py-4 font-semibold text-white">
-                                        Proveedor
-                                    </th>
-                                    <th className="px-6 py-4 font-semibold text-white">
-                                        Acciones
-                                    </th>
+                                    <th className="px-6 py-4 font-semibold text-white">Proveedor</th>
+                                    <th className="px-6 py-4 font-semibold text-white">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-200 bg-white">
-                                {productos.length > 0 ? (
-                                    productos.map((producto) => (
-                                        <tr
-                                            key={producto.id}
-                                            className="hover:bg-gray-50 transition-colors"
-                                        >
+                                {productos.data.length > 0 ? (
+                                    productos.data.map((producto) => (
+                                        <tr key={producto.id} className="hover:bg-gray-50 transition-colors">
                                             <td className="px-6 py-4 font-medium text-gray-900">
                                                 {producto.imagen ? (
                                                     <img
@@ -171,6 +275,34 @@ export default function Index({ productos, flash }: Props) {
                                 )}
                             </tbody>
                         </table>
+
+                        <p>
+                            Mostrando {productos.from ?? 0} a {productos.to ?? 0}
+                            {' '}de {productos.total} productos
+                        </p>
+
+                        <div>
+                            {productos.prev_page_url && (
+                                <button
+                                    type="button"
+                                    onClick={() => router.get(productos.prev_page_url!)}
+                                >
+                                    Anterior
+                                </button>
+                            )}
+                            <span>
+                                Página {productos.current_page} de {productos.last_page}
+                            </span>
+                            {productos.next_page_url && (
+                                <button
+                                    type="button"
+                                    onClick={() => router.get(productos.next_page_url!)}
+                                >
+                                    Siguiente
+                                </button>
+                            )}
+                        </div>
+
                     </div>
                 </div>
             </div>
