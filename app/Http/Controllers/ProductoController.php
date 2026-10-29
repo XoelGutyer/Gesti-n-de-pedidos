@@ -10,6 +10,10 @@ use Illuminate\Support\Facades\Storage;
 use App\Http\Requests\Producto\StoreRequest;
 use App\Http\Requests\Producto\UpdateRequest;
 use Barryvdh\DomPDF\Facade\Pdf;
+//PARA LA OPTIMIZACION DE IMAGENES
+use Intervention\Image\ImageManager;
+use Intervention\Image\Drivers\Gd\Driver;
+use Intervention\Image\Format;
 
 class ProductoController extends Controller
 {
@@ -53,12 +57,21 @@ public function store(StoreRequest $request)
         'imagen' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
     ]);
 
-    $data['imagen'] = null;
+    unset($data['imagen']);
 
     if ($request->hasFile('imagen')) {
-        $data['imagen'] = $request
-            ->file('imagen')
-            ->store('productosImagenes', 'public');
+        $manager = new ImageManager(new Driver());
+
+        $imagen = $manager
+    ->decode($request->file('imagen'))
+    ->scaleDown(width: 1200, height: 1200)
+    ->encodeUsingFormat(Format::WEBP, quality: 82);
+
+        $ruta = 'productosImagenes/' . uniqid('producto_') . '.webp';
+
+        Storage::disk('public')->put($ruta, (string) $imagen);
+
+        $data['imagen'] = $ruta;
     }
 
     Producto::create($data);
@@ -92,7 +105,7 @@ public function store(StoreRequest $request)
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdateRequest $request, Producto $producto)
+public function update(UpdateRequest $request, Producto $producto)
 {
     $data = $request->only([
         'nombre',
@@ -103,18 +116,18 @@ public function store(StoreRequest $request)
     ]);
 
     if ($request->hasFile('imagen')) {
-        $file = $request->file('imagen');
+        $manager = new ImageManager(new Driver());
 
-        $data['imagen'] = $file->store(
-            'productosImagenes',
-            'public'
-        );
+        $imagen = $manager
+    ->decode($request->file('imagen'))
+    ->scaleDown(width: 1200, height: 1200)
+    ->encodeUsingFormat(Format::WEBP, quality: 82);
 
-        if ($producto->imagen) {
-            // Eliminar la imagen anterior si existe
-            Storage::disk('public')->delete($producto->imagen);
-        }
-    
+        $ruta = 'productosImagenes/' . uniqid('producto_') . '.webp';
+
+        Storage::disk('public')->put($ruta, (string) $imagen);
+
+        $data['imagen'] = $ruta;
     }
 
     $producto->update($data);
