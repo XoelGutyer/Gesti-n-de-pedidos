@@ -18,8 +18,8 @@ class Cliente extends Model
         'user_id',
     ];
 
-    public function user(): BelongsTo
+    public function  usuario()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'user_id');
     }
 }

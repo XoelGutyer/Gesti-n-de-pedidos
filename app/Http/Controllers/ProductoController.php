@@ -95,15 +95,15 @@ public function store(StoreRequest $request)
         'imagen' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
     ]);
 
-    unset($data['imagen']);
+    $data['imagen'] = null;
 
     if ($request->hasFile('imagen')) {
         $manager = new ImageManager(new Driver());
 
         $imagen = $manager
-    ->decode($request->file('imagen'))
-    ->scaleDown(width: 1200, height: 1200)
-    ->encodeUsingFormat(Format::WEBP, quality: 82);
+            ->decode($request->file('imagen'))
+            ->scaleDown(width: 1200, height: 1200)
+            ->encodeUsingFormat(Format::WEBP, quality: 82);
 
         $ruta = 'productosImagenes/' . uniqid('producto_') . '.webp';
 
@@ -118,8 +118,6 @@ public function store(StoreRequest $request)
         ->route('productos.index')
         ->with('success', 'Producto creado correctamente.');
 }
-
-
     /**
      * Display the specified resource.
      */
@@ -157,17 +155,29 @@ public function update(UpdateRequest $request, Producto $producto)
         $manager = new ImageManager(new Driver());
 
         $imagen = $manager
-    ->decode($request->file('imagen'))
-    ->scaleDown(width: 1200, height: 1200)
-    ->encodeUsingFormat(Format::WEBP, quality: 82);
+            ->decode($request->file('imagen'))
+            ->scaleDown(width: 1200, height: 1200)
+            ->encodeUsingFormat(Format::WEBP, quality: 82);
 
         $ruta = 'productosImagenes/' . uniqid('producto_') . '.webp';
 
         Storage::disk('public')->put($ruta, (string) $imagen);
 
+        // Eliminar la imagen anterior si existe
+        if ($producto->imagen) {
+            Storage::disk('public')->delete($producto->imagen);
+        }
+
         $data['imagen'] = $ruta;
     }
+
+    $producto->update($data);
+
+    return redirect()
+        ->route('productos.index')
+        ->with('success', 'Producto actualizado correctamente.');
 }
+
     /**
      * Remove the specified resource from storage.
      */
