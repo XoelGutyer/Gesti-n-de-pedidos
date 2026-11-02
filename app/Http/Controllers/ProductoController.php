@@ -84,40 +84,40 @@ class ProductoController extends Controller
      * Store a newly created resource in storage.
      */
 
-public function store(StoreRequest $request)
-{
-    $data = $request->validate([
-        'nombre' => 'required|string|max:255',
-        'precio' => 'required|numeric|between:0,999999999.99',
-        'costo' => 'required|numeric|between:0,999999999.99',
-        'stock' => 'required|integer|between:0,1000000',
-        'proveedor_id' => 'required|integer|exists:proveedores,id',
-        'imagen' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
-    ]);
+    public function store(StoreRequest $request)
+    {
+        $data = $request->validate([
+            'nombre' => 'required|string|max:255',
+            'precio' => 'required|numeric|between:0,999999999.99',
+            'costo' => 'required|numeric|between:0,999999999.99',
+            'stock' => 'required|integer|between:0,1000000',
+            'proveedor_id' => 'required|integer|exists:proveedores,id',
+            'imagen' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+        ]);
 
-    $data['imagen'] = null;
+        $data['imagen'] = null;
 
-    if ($request->hasFile('imagen')) {
-        $manager = new ImageManager(new Driver());
+        if ($request->hasFile('imagen')) {
+            $manager = new ImageManager(new Driver());
 
-        $imagen = $manager
-            ->decode($request->file('imagen'))
-            ->scaleDown(width: 1200, height: 1200)
-            ->encodeUsingFormat(Format::WEBP, quality: 82);
+            $imagen = $manager
+                ->decode($request->file('imagen'))
+                ->scaleDown(width: 1200, height: 1200)
+                ->encodeUsingFormat(Format::WEBP, quality: 82);
 
-        $ruta = 'productosImagenes/' . uniqid('producto_') . '.webp';
+            $ruta = 'productosImagenes/' . uniqid('producto_') . '.webp';
 
-        Storage::disk('public')->put($ruta, (string) $imagen);
+            Storage::disk('public')->put($ruta, (string) $imagen);
 
-        $data['imagen'] = $ruta;
+            $data['imagen'] = $ruta;
+        }
+
+        Producto::create($data);
+
+        return redirect()
+            ->route('productos.index')
+            ->with('success', 'Producto creado correctamente.');
     }
-
-    Producto::create($data);
-
-    return redirect()
-        ->route('productos.index')
-        ->with('success', 'Producto creado correctamente.');
-}
     /**
      * Display the specified resource.
      */
@@ -141,42 +141,42 @@ public function store(StoreRequest $request)
     /**
      * Update the specified resource in storage.
      */
-public function update(UpdateRequest $request, Producto $producto)
-{
-    $data = $request->only([
-        'nombre',
-        'precio',
-        'costo',
-        'stock',
-        'proveedor_id',
-    ]);
+    public function update(UpdateRequest $request, Producto $producto)
+    {
+        $data = $request->only([
+            'nombre',
+            'precio',
+            'costo',
+            'stock',
+            'proveedor_id',
+        ]);
 
-    if ($request->hasFile('imagen')) {
-        $manager = new ImageManager(new Driver());
+        if ($request->hasFile('imagen')) {
+            $manager = new ImageManager(new Driver());
 
-        $imagen = $manager
-            ->decode($request->file('imagen'))
-            ->scaleDown(width: 1200, height: 1200)
-            ->encodeUsingFormat(Format::WEBP, quality: 82);
+            $imagen = $manager
+                ->decode($request->file('imagen'))
+                ->scaleDown(width: 1200, height: 1200)
+                ->encodeUsingFormat(Format::WEBP, quality: 82);
 
-        $ruta = 'productosImagenes/' . uniqid('producto_') . '.webp';
+            $ruta = 'productosImagenes/' . uniqid('producto_') . '.webp';
 
-        Storage::disk('public')->put($ruta, (string) $imagen);
+            Storage::disk('public')->put($ruta, (string) $imagen);
 
-        // Eliminar la imagen anterior si existe
-        if ($producto->imagen) {
-            Storage::disk('public')->delete($producto->imagen);
+            // Eliminar la imagen anterior si existe
+            if ($producto->imagen) {
+                Storage::disk('public')->delete($producto->imagen);
+            }
+
+            $data['imagen'] = $ruta;
         }
 
-        $data['imagen'] = $ruta;
+        $producto->update($data);
+
+        return redirect()
+            ->route('productos.index')
+            ->with('success', 'Producto actualizado correctamente.');
     }
-
-    $producto->update($data);
-
-    return redirect()
-        ->route('productos.index')
-        ->with('success', 'Producto actualizado correctamente.');
-}
 
     /**
      * Remove the specified resource from storage.
@@ -187,12 +187,12 @@ public function update(UpdateRequest $request, Producto $producto)
             'activo' => false,
         ]);
 
-    return redirect()
-        ->route('productos.index')
-        ->with('success', 'Producto desactivado correctamente.');
-}
+        return redirect()
+            ->route('productos.index')
+            ->with('success', 'Producto desactivado correctamente.');
+    }
 
- public function pdf()
+    public function pdf()
     {
         $productos = Producto::with('proveedor')
             ->where('activo', true)
@@ -215,12 +215,14 @@ public function update(UpdateRequest $request, Producto $producto)
 
         // Agrupar los productos por proveedor.
         $proveedores = $productos
-            ->sortBy(fn ($producto) =>
+            ->sortBy(
+                fn($producto) =>
                 mb_strtolower($producto->proveedor?->nombre ?? 'Sin proveedor')
-                . '|'
-                . mb_strtolower($producto->nombre)
+                    . '|'
+                    . mb_strtolower($producto->nombre)
             )
-            ->groupBy(fn ($producto) =>
+            ->groupBy(
+                fn($producto) =>
                 $producto->proveedor?->nombre ?? 'Sin proveedor'
             );
 

@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ProveedorController;
 use App\Http\Controllers\Admin\UsuarioController;
 use App\Http\Controllers\PapeleraController;
+use App\Http\Controllers\PedidoController;
 
 Route::inertia('/', 'welcome')->name('home');
 
@@ -24,6 +25,10 @@ Route::middleware(['auth', 'verified','role:admin,preventista,cliente'])->group(
     Route::get('/proveedores/{proveedor}/edit',[ProveedorController::class,'edit'])->name('proveedores.edit');
     Route::put('/proveedores/{proveedor}',[ProveedorController::class,'update'])->name('proveedores.update');
     Route::delete('/proveedores/{proveedor}',[ProveedorController::class,'destroy'])->name('proveedores.destroy');
+
+    Route::get('/pedidos',[PedidoController::class,'index'])->name('pedidos.index');
+    Route::get('/pedidos/create',[PedidoController::class,'create'])->name('pedidos.create');
+    Route::post('/pedidos',[PedidoController::class,'store'])->name('pedidos.store');
 });
 
 Route::middleware(['auth', 'verified','role:admin,preventista'])->group(function () {
