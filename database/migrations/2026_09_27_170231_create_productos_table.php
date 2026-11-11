@@ -21,6 +21,7 @@ return new class extends Migration
             $table->string('imagen')->nullable();
             
             $table->boolean('activo')->default(true);
+            $table->integer('descuento')->default(0);
 
             $table->foreignId('proveedor_id')->constrained('proveedores');          
             $table->timestamps();

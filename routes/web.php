@@ -8,7 +8,27 @@ use App\Http\Controllers\Admin\UsuarioController;
 use App\Http\Controllers\PapeleraController;
 use App\Http\Controllers\PedidoController;
 
-Route::inertia('/', 'welcome')->name('home');
+use App\Models\Category;
+use App\Models\Producto;
+use Inertia\Inertia;
+
+
+Route::get('/', function () {
+    return Inertia::render('welcome', [
+        'productos' => Producto::where('activo', true)
+            ->where('stock', '>', 0)
+            ->latest()
+            ->get(['id', 'nombre', 'precio', 'stock', 'imagen'])
+            ->map(fn ($p) => [
+                'id' => $p->id,
+                'nombre' => $p->nombre,
+                'precio' => $p->precio,
+                'stock' => $p->stock,
+                'imagen' => $p->imagen ? asset('storage/'.$p->imagen) : null,
+            ]),
+    ]);
+})->name('home');
+
 
 Route::middleware(['auth', 'verified'])->group(function () {
     //el primer dashboard es la ruta /dashboard y el segundo es la vista pages/dashboard.tsx
@@ -76,6 +96,17 @@ Route::middleware('auth')->group(function () {
         '/papelera/clientes/{cliente}/restaurar',
         [PapeleraController::class,'restaurarCliente']
     )->name('papelera.clientes.activar');
+});
+//para la tienda online
+use App\Http\Controllers\CheckoutController;
+use App\Http\Controllers\CuentaController;
+
+Route::middleware('auth')->group(function () {
+    Route::get('/checkout', [CheckoutController::class, 'create'])->name('checkout');
+    Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
+    Route::get('/pedidos/{pedido}/confirmacion', [CheckoutController::class, 'confirmacion'])
+        ->name('pedidos.confirmacion');
+    Route::get('/mi-cuenta', [CuentaController::class, 'index'])->name('mi-cuenta');
 });
 
 require __DIR__.'/settings.php';

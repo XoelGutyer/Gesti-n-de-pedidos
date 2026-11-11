@@ -22,6 +22,7 @@ return new class extends Migration
             
             $table->decimal('total',10,2);
             $table->boolean('pagado')->default(false);
+            $table->string('mp_payment_id')->nullable()->unique();  
 
             $table->foreignId('usuario_id')->constrained('users');
             $table->foreignId('cliente_id')->constrained('clientes');

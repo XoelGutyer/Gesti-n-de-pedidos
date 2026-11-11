@@ -18,10 +18,6 @@ class DatabaseSeeder extends Seeder
         // User::factory(10)->create();
 
         User::factory()->create([
-            'name' => 'cliente',
-            'email' => 'cliente@test.com',
-        ]);
-        User::factory()->create([
             'name' => 'preventista',
             'email' => 'preventista@test.com',
             'role' => 'preventista'
@@ -35,6 +31,10 @@ class DatabaseSeeder extends Seeder
         $this->call([
             ProveedorSeeder::class,
             ProductoSeeder::class,
+        ]);
+
+        $this->call([
+        ClienteSeeder::class,
         ]);
     }
 }

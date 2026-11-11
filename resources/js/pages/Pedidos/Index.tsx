@@ -46,12 +46,6 @@ export default function Index({ pedidos, flash }: Props) {
                     Pedidos
                 </h1>
 
-                <h4 className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                    Lista de Pedidos registrados en el sistema.
-                    <pre className="bg-gray-100 p-4 rounded-md text-xs overflow-auto">
-                        {JSON.stringify(pedidos, null, 2)}
-                    </pre>
-                </h4>
 
                 <Button asChild>
                     <Link href="/pedidos/create">

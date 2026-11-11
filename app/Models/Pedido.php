@@ -16,12 +16,14 @@ class Pedido extends Model
         'direccion',
         'total',
         'pagado',
+        'mp_payment_id',
         'usuario_id',
         'cliente_id',
     ];
 
     protected $casts = [
         'fecha' => 'date',
+        'pagado' => 'boolean',
     ];
 
     protected $appends = ['formato_fecha'];
