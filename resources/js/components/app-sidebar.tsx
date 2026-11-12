@@ -52,6 +52,11 @@ const mainNavItems: NavItem[] = [
     href: '/pedidos',
     icon: Scroll,
     },
+    {
+    title: 'Ventas por proveedor',
+    href: '/reportes/ventas-proveedores',
+    icon: Truck 
+    },
 ];
 
 const footerNavItems: NavItem[] = [

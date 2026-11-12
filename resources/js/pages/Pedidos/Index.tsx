@@ -1,8 +1,8 @@
-import React from 'react';
-import { Head, Link } from '@inertiajs/react';
-import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
-import clientes from '@/routes/clientes';
+import { Button } from "@/components/ui/button";
+import { Head, Link, router } from "@inertiajs/react";
+import { useState } from "react";
+import { Check, Eye, FileText, Pencil, Plus } from "lucide-react";
+
 interface DetallePedido {
     id: number;
     cantidad: number;
@@ -12,7 +12,7 @@ interface DetallePedido {
     producto_id: number;
     producto: {
         nombre: string;
-    }
+    };
 }
 
 interface Pedido {
@@ -38,31 +38,63 @@ interface Props {
 }
 
 export default function Index({ pedidos, flash }: Props) {
+    const [seleccion, setSeleccion] = useState<number[]>([]);
+    const todos = pedidos.length > 0 && seleccion.length === pedidos.length;
+
+    const alternar = (id: number) =>
+        setSeleccion((s) =>
+            s.includes(id) ? s.filter((x) => x !== id) : [...s, id],
+        );
+
+    const alternarTodos = () =>
+        setSeleccion(todos ? [] : pedidos.map((p) => p.id));
+
+    const abrirRemitos = (ids: number[]) => {
+        const q = new URLSearchParams();
+        ids.forEach((id) => q.append("ids[]", String(id)));
+        window.open(`/pedidos/remitos?${q.toString()}`, "_blank");
+    };
+
+    const marcarPagado = (p: Pedido) => {
+        if (!confirm(`¿Marcar el pedido #${p.id} como pagado?`)) return;
+        router.patch(
+            `/pedidos/${p.id}/marcar-pagado`,
+            {},
+            { preserveScroll: true },
+        );
+    };
+
     return (
         <div className="p-6">
-            <div className="mb-6 overflow-x-auto flex justify-between items-center">
-                <Head title="Pedidos" />
-                <h1 className="text-2xl font-bold text-white">
-                    Pedidos
-                </h1>
+            <Head title="Pedidos" />
+            <div className="mb-6 flex items-center justify-between gap-2">
+                <h1 className="text-2xl font-bold text-white">Pedidos</h1>
 
-
-                <Button asChild>
-                    <Link href="/pedidos/create">
-                        <Plus />
-                        Nuevo producto
-                    </Link>
-                </Button>
+                <div className="flex items-center gap-2">
+                    {seleccion.length > 0 && (
+                        <Button
+                            variant="outline"
+                            onClick={() => abrirRemitos(seleccion)}
+                        >
+                            <FileText />
+                            Crear remitos ({seleccion.length})
+                        </Button>
+                    )}
+                    <Button asChild>
+                        <Link href="/pedidos/create">
+                            <Plus />
+                            Nuevo pedido
+                        </Link>
+                    </Button>
+                </div>
             </div>
 
             {flash?.success && (
                 <div
-                    className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative"
+                    className="relative mb-4 rounded border border-green-400 bg-green-100 px-4 py-3 text-green-700"
                     role="alert"
                 >
-                    <span className="block sm:inline">
-                        {flash.success}
-                    </span>
+                    <span className="block sm:inline">{flash.success}</span>
                 </div>
             )}
 
@@ -71,34 +103,53 @@ export default function Index({ pedidos, flash }: Props) {
                     <table className="w-full text-left text-sm">
                         <thead className="border-b border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800">
                             <tr>
-                                <th className="px-6 py-4 font-semibold text-gray-700 dark:text-gray-200">
-                                    ID
+                                <th className="w-10 px-4 py-4">
+                                    <input
+                                        type="checkbox"
+                                        className="size-4"
+                                        checked={todos}
+                                        onChange={alternarTodos}
+                                        aria-label="Seleccionar todos"
+                                    />
                                 </th>
-                                <th className="px-6 py-4 font-semibold text-gray-700 dark:text-gray-200">
-                                    Cliente
-                                </th>
-                                <th className="px-6 py-4 font-semibold text-gray-700 dark:text-gray-200">
-                                    Fecha
-                                </th>
-                                <th className="px-6 py-4 font-semibold text-gray-700 dark:text-gray-200">
-                                    Pagado
-                                </th>
-                                <th className="px-6 py-4 font-semibold text-gray-700 dark:text-gray-200">
-                                    Total
-                                </th>
-                                <th className="px-6 py-4 font-semibold text-gray-700 dark:text-gray-200">
-                                    Productos comprados
-                                </th>
-                                <th className="px-6 py-4 font-semibold text-gray-700 dark:text-gray-200">
-                                    Acciones
-                                </th>
+                                {[
+                                    "ID",
+                                    "Cliente",
+                                    "Fecha",
+                                    "Pagado",
+                                    "Total",
+                                    "Acciones",
+                                ].map((t) => (
+                                    <th
+                                        key={t}
+                                        className="px-6 py-4 font-semibold text-gray-700 dark:text-gray-200"
+                                    >
+                                        {t}
+                                    </th>
+                                ))}
                             </tr>
                         </thead>
 
                         <tbody>
                             {pedidos.length > 0 ? (
                                 pedidos.map((pedido) => (
-                                    <tr key={pedido.id} className="border-b border-gray-100 last:border-b-0 hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-gray-800">
+                                    <tr
+                                        key={pedido.id}
+                                        className="border-b border-gray-100 last:border-b-0 hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-gray-800"
+                                    >
+                                        <td className="px-4 py-4">
+                                            <input
+                                                type="checkbox"
+                                                className="size-4"
+                                                checked={seleccion.includes(
+                                                    pedido.id,
+                                                )}
+                                                onChange={() =>
+                                                    alternar(pedido.id)
+                                                }
+                                                aria-label={`Seleccionar pedido ${pedido.id}`}
+                                            />
+                                        </td>
                                         <td className="px-6 py-4 text-gray-600 dark:text-gray-400">
                                             {pedido.id}
                                         </td>
@@ -109,32 +160,65 @@ export default function Index({ pedidos, flash }: Props) {
                                             {pedido.formato_fecha}
                                         </td>
                                         <td className="px-6 py-4 text-gray-600 dark:text-gray-400">
-                                            {pedido.pagado}
+                                            {pedido.pagado ? "Sí" : "No"}
                                         </td>
                                         <td className="px-6 py-4 text-gray-600 dark:text-gray-400">
-                                            {pedido.total}
+                                            ${Number(pedido.total).toFixed(2)}
                                         </td>
-                                        <td className="px-6 py-4 text-gray-600 dark:text-gray-400">
-                                            <ul className="list-disc list-inside space-y-1">
-                                                {pedido.items.map((item) => (
-                                                    <li key={item.id} className="text-xs flex flex-col">
-                                                        <span className="font-medium">{item.producto.nombre}</span>
-                                                        {' '} (x{item.cantidad}) - ${Number(item.precioProducto).toFixed(2)} c/u
-                                                    </li>
-                                                ))}
-                                            </ul>
+
+                                        <td className="px-6 py-4">
+                                            <div className="flex flex-wrap gap-2">
+                                                
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    asChild
+                                                >
+                                                    <Link
+                                                        href={`/pedidos/${pedido.id}`}
+                                                    >
+                                                        <Eye /> Ver detalle
+                                                    </Link>
+                                                </Button>
+                                                {!pedido.pagado && (
+                                                    <>
+                                                        <Button
+                                                            size="sm"
+                                                            variant="outline"
+                                                            asChild
+                                                        >
+                                                            <Link
+                                                                href={`/pedidos/${pedido.id}/editar-items`}
+                                                            >
+                                                                <Pencil />{" "}
+                                                                Editar ítems
+                                                            </Link>
+                                                        </Button>
+                                                        <Button
+                                                            size="sm"
+                                                            onClick={() =>
+                                                                marcarPagado(
+                                                                    pedido,
+                                                                )
+                                                            }
+                                                        >
+                                                            <Check /> Marcar
+                                                            pagado
+                                                        </Button>
+                                                    </>
+                                                )}
+                                            </div>
                                         </td>
                                     </tr>
                                 ))
                             ) : (
                                 <tr>
                                     <td
-                                        colSpan={7}
+                                        colSpan={8}
                                         className="px-6 py-10 text-center text-gray-500 dark:text-gray-400"
                                     >
                                         No hay pedidos registrados.
                                     </td>
-
                                 </tr>
                             )}
                         </tbody>
@@ -142,7 +226,5 @@ export default function Index({ pedidos, flash }: Props) {
                 </div>
             </div>
         </div>
-
-
-    )
+    );
 }
