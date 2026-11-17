@@ -83,7 +83,7 @@ export default function Index({ ordenes, filtros, flash }: Props) {
                         </Button>
                     )} */}
                     <Button asChild>
-                        <Link href="/Ordenes/create">
+                        <Link href="/ordenes/create">
                             <Plus />
                             Nueva orden
                         </Link>
