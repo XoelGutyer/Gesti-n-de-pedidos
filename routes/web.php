@@ -100,6 +100,14 @@ Route::middleware(['auth', 'verified','role:admin,preventista,cliente'])->group(
     //reportes
     Route::get('reportes/ventas-proveedores', [ReporteController::class, 'ventasPorProveedor']);
     Route::get('reportes/ventas-proveedores/exportar', [ReporteController::class, 'exportar']);
+    //ordenes
+    Route::get('/ordenes', [App\Http\Controllers\OrdenController::class, 'index'])->name('ordenes.index');
+    Route::get('/ordenes/create', [App\Http\Controllers\OrdenController::class, 'create'])->name('ordenes.create');
+    Route::post('/ordenes', [App\Http\Controllers\OrdenController::class, 'store'])->name('ordenes.store');
+    Route::get('/ordenes/{orden}', [App\Http\Controllers\OrdenController::class, 'show'])->name('ordenes.show');
+    Route::get('/ordenes/{orden}/edit', [App\Http\Controllers\OrdenController::class, 'edit'])->name('ordenes.edit');
+    Route::put('/ordenes/{orden}', [App\Http\Controllers\OrdenController::class, 'update'])->name('ordenes.update');
+    Route::delete('/ordenes/{orden}', [App\Http\Controllers\OrdenController::class, 'destroy'])->name('ordenes.destroy');
 });
 
 require __DIR__.'/settings.php';
