@@ -1,7 +1,30 @@
 import { Button } from "@/components/ui/button";
 import { Head, Link, router } from "@inertiajs/react";
 import { useState } from "react";
-import { Check, Eye, FileText, Pencil, Plus } from "lucide-react";
+
+import {
+    Check,
+    ChevronsUpDown,
+    Eye,
+    FileText,
+    Pencil,
+    Plus,
+    Search,
+    X,
+} from "lucide-react";
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+    Command,
+    CommandEmpty,
+    CommandGroup,
+    CommandInput,
+    CommandItem,
+    CommandList,
+} from "@/components/ui/command";
 
 interface DetallePedido {
     id: number;
@@ -21,6 +44,7 @@ interface Pedido {
     nota: string;
     total: number;
     pagado: boolean;
+    estado: "pendiente" | "en_preparacion" | "en_camino";
     cliente: {
         nombre: string;
     };
@@ -32,12 +56,61 @@ interface Pedido {
 
 interface Props {
     pedidos: Pedido[];
-    flash?: {
-        success?: string;
-    };
+    clientes: { id: number; nombre: string; email?: string | null }[];
+    filtros: { desde?: string; hasta?: string; cliente_id?: string };
+    flash?: { success?: string };
 }
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 
-export default function Index({ pedidos, flash }: Props) {
+const ESTADOS = [
+    { value: "pendiente", label: "Pendiente" },
+    { value: "en_preparacion", label: "En preparación" },
+    { value: "en_camino", label: "En camino" },
+];
+
+const cambiarEstado = (pedido: Pedido, estado: string) => {
+    router.patch(
+        `/pedidos/${pedido.id}/estado`,
+        { estado },
+        { preserveScroll: true },
+    );
+};
+
+export default function Index({ pedidos, clientes, filtros, flash }: Props) {
+
+    const [desde, setDesde] = useState(filtros.desde ?? "");
+    const [hasta, setHasta] = useState(filtros.hasta ?? "");
+    const [clienteId, setClienteId] = useState(filtros.cliente_id ?? "todos");
+
+    const [abierto, setAbierto] = useState(false);
+    const clienteSeleccionado = clientes.find(
+        (c) => String(c.id) === clienteId,
+    );
+
+    const filtrar = () => {
+        router.get(
+            "/pedidos",
+            {
+                desde: desde || undefined,
+                hasta: hasta || undefined,
+                cliente_id: clienteId !== "todos" ? clienteId : undefined,
+            },
+            { preserveState: true, preserveScroll: true },
+        );
+    };
+
+    const limpiar = () => {
+        setDesde("");
+        setHasta("");
+        setClienteId("todos");
+        router.get("/pedidos", {}, { preserveState: true });
+    };
     const [seleccion, setSeleccion] = useState<number[]>([]);
     const todos = pedidos.length > 0 && seleccion.length === pedidos.length;
 
@@ -97,6 +170,111 @@ export default function Index({ pedidos, flash }: Props) {
                     <span className="block sm:inline">{flash.success}</span>
                 </div>
             )}
+
+            <div className="mb-4 flex flex-wrap items-end gap-3">
+                <div className="flex flex-col gap-1">
+                    <label className="text-xs text-gray-400">Desde</label>
+                    <input
+                        type="date"
+                        value={desde}
+                        onChange={(e) => setDesde(e.target.value)}
+                        className="h-9 rounded-md border border-gray-300 bg-white px-3 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+                    />
+                </div>
+
+                <div className="flex flex-col gap-1">
+                    <label className="text-xs text-gray-400">Hasta</label>
+                    <input
+                        type="date"
+                        value={hasta}
+                        onChange={(e) => setHasta(e.target.value)}
+                        className="h-9 rounded-md border border-gray-300 bg-white px-3 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+                    />
+                </div>
+
+                    <div className="flex flex-col gap-1">
+                        <label className="text-xs text-gray-400">Cliente</label>
+                        <Popover open={abierto} onOpenChange={setAbierto}>
+                            <PopoverTrigger asChild>
+                                <Button
+                                    variant="outline"
+                                    role="combobox"
+                                    aria-expanded={abierto}
+                                    className="h-9 w-[240px] justify-between font-normal"
+                                >
+                                    <span className="truncate">
+                                        {clienteSeleccionado?.nombre ??
+                                            "Todos los clientes"}
+                                    </span>
+                                    <ChevronsUpDown className="size-4 opacity-50" />
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent
+                                className="w-[300px] p-0"
+                                align="start"
+                            >
+                                <Command>
+                                    <CommandInput placeholder="Buscar por nombre o correo..." />
+                                    <CommandList>
+                                        <CommandEmpty>
+                                            No se encontró ningún cliente.
+                                        </CommandEmpty>
+                                        <CommandGroup>
+                                            <CommandItem
+                                                value="todos los clientes"
+                                                onSelect={() => {
+                                                    setClienteId("todos");
+                                                    setAbierto(false);
+                                                }}
+                                            >
+                                                Todos los clientes
+                                            </CommandItem>
+                                            {clientes.map((c) => (
+                                                <CommandItem
+                                                    key={c.id}
+                                                    value={`${c.nombre} ${c.email ?? ""} ${c.id}`}
+                                                    onSelect={() => {
+                                                        setClienteId(
+                                                            String(c.id),
+                                                        );
+                                                        setAbierto(false);
+                                                    }}
+                                                >
+                                                    <Check
+                                                        className={
+                                                            clienteId ===
+                                                            String(c.id)
+                                                                ? "opacity-100"
+                                                                : "opacity-0"
+                                                        }
+                                                    />
+                                                    <div className="flex min-w-0 flex-col">
+                                                        <span className="truncate">
+                                                            {c.nombre}
+                                                        </span>
+                                                        {c.email && (
+                                                            <span className="truncate text-xs text-gray-400">
+                                                                {c.email}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </CommandItem>
+                                            ))}
+                                        </CommandGroup>
+                                    </CommandList>
+                                </Command>
+                            </PopoverContent>
+                        </Popover>
+                    </div>
+                
+
+                <Button onClick={filtrar}>
+                    <Search /> Filtrar
+                </Button>
+                <Button variant="outline" onClick={limpiar}>
+                    <X /> Limpiar
+                </Button>
+            </div>
 
             <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-900">
                 <div className="overflow-x-auto">
@@ -167,43 +345,75 @@ export default function Index({ pedidos, flash }: Props) {
                                         </td>
 
                                         <td className="px-6 py-4">
-                                            <div className="flex flex-wrap gap-2">
-                                                
+                                            <div className="flex items-center gap-2">
+                                                <Select
+                                                    value={pedido.estado}
+                                                    onValueChange={(valor) =>
+                                                        cambiarEstado(
+                                                            pedido,
+                                                            valor,
+                                                        )
+                                                    }
+                                                >
+                                                    <SelectTrigger className="h-8 w-[150px]">
+                                                        <SelectValue />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {ESTADOS.map((e) => (
+                                                            <SelectItem
+                                                                key={e.value}
+                                                                value={e.value}
+                                                            >
+                                                                {e.label}
+                                                            </SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+
                                                 <Button
-                                                    size="sm"
+                                                    size="icon"
                                                     variant="outline"
+                                                    className="h-8 w-8"
+                                                    title="Ver detalle"
+                                                    aria-label="Ver detalle"
                                                     asChild
                                                 >
                                                     <Link
                                                         href={`/pedidos/${pedido.id}`}
                                                     >
-                                                        <Eye /> Ver detalle
+                                                        <Eye />
                                                     </Link>
                                                 </Button>
+
                                                 {!pedido.pagado && (
                                                     <>
                                                         <Button
-                                                            size="sm"
+                                                            size="icon"
                                                             variant="outline"
+                                                            className="h-8 w-8"
+                                                            title="Editar ítems"
+                                                            aria-label="Editar ítems"
                                                             asChild
                                                         >
                                                             <Link
                                                                 href={`/pedidos/${pedido.id}/editar-items`}
                                                             >
-                                                                <Pencil />{" "}
-                                                                Editar ítems
+                                                                <Pencil />
                                                             </Link>
                                                         </Button>
+
                                                         <Button
-                                                            size="sm"
+                                                            size="icon"
+                                                            className="h-8 w-8"
+                                                            title="Marcar pagado"
+                                                            aria-label="Marcar pagado"
                                                             onClick={() =>
                                                                 marcarPagado(
                                                                     pedido,
                                                                 )
                                                             }
                                                         >
-                                                            <Check /> Marcar
-                                                            pagado
+                                                            <Check />
                                                         </Button>
                                                     </>
                                                 )}

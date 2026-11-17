@@ -16,6 +16,7 @@ class Pedido extends Model
         'direccion',
         'total',
         'pagado',
+        'estado',
         'mp_payment_id',
         'usuario_id',
         'cliente_id',
@@ -24,6 +25,7 @@ class Pedido extends Model
     protected $casts = [
         'fecha' => 'date',
         'pagado' => 'boolean',
+        'estado' => \App\Enums\EstadoPedido::class,
     ];
 
     protected $appends = ['formato_fecha'];

@@ -59,6 +59,7 @@ Route::middleware(['auth', 'verified','role:admin,preventista,cliente'])->group(
     Route::get('pedidos/{pedido}/editar-items', [PedidoAccionesController::class, 'editarItems']);
     Route::put('pedidos/{pedido}/items', [PedidoAccionesController::class, 'actualizarItems']);
     Route::get('pedidos/{pedido}', [PedidoAccionesController::class, 'detalle'])->whereNumber('pedido');
+    Route::patch('/pedidos/{pedido}/estado', [PedidoController::class, 'cambiarEstado']);
     //productos
     Route::get('/productos',[ProductoController::class,'index'])->name('productos.index');
     Route::get('/productos/create',[ProductoController::class,'create'])->name('productos.create');

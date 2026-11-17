@@ -22,6 +22,7 @@ return new class extends Migration
             
             $table->decimal('total',10,2);
             $table->boolean('pagado')->default(false);
+            $table->enum('estado', ['pendiente', 'en_preparacion', 'en_camino'])->default('pendiente');
             $table->string('mp_payment_id')->nullable()->unique();  
 
             $table->foreignId('usuario_id')->constrained('users');
