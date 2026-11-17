@@ -1,0 +1,146 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Http\Requests\StoreOrdenRequest;
+use App\Models\DetalleOrden;
+use App\Models\Orden;
+use App\Models\Producto;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Inertia\Inertia;
+
+class OrdenController extends Controller
+{
+    /**
+     * Display a listing of the resource.
+     */
+    public function index(Request $request)
+    {
+        $orden = $request->input('orden', 'nombre');//asigna el valor por defecto en el caso que el input orden venga vacio
+        $direccion = $request->input('direccion', 'asc');
+
+        $camposPermitidos = ['nombre', 'estado', 'total'];
+
+        if(!in_array($orden, $camposPermitidos, true)){//el true es para una comparacion estricta (calor y TD)
+            $orden = 'nombre';
+        }
+
+        if(!in_array($direccion, ['asc', 'desc'], true )){
+            $direccion = 'asc';
+        }
+        //
+        $ordenes = Orden::with(['proveedor:id,nombre', 'usuario:id,name', 'items'])
+            ->when($orden==='nombre', function ($query) use ($direccion){
+                $query->join('proveedores', 'ordenes.proveedor_id', '=', 'proveedores.id')
+                    ->orderBy('proveedores.nombre',$direccion)
+                    ->select('ordenes.*');
+            },function ($query) use ($orden, $direccion ){
+                $query->orderBy("ordenes.{$orden}",$direccion);
+            })
+//            ->latest()
+            ->orderBy($orden, $direccion)
+            ->get();
+        return Inertia::render('Ordenes/Index',[
+            'ordenes' => $ordenes,
+            'filtros' =>[
+                'orden' => $orden,
+                'direccion' => $direccion,
+            ]
+        ]);
+
+    }
+
+    /**
+     * Show the form for creating a new resource.
+     */
+    public function create()
+    {
+        //
+        return Inertia::render('Ordenes/Create', [
+            'proveedores' => \App\Models\Proveedor::all(['id', 'nombre']),
+            'productos' => Producto::all(['id', 'nombre', 'costo', 'stock', 'proveedor_id']),
+        ]);
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     */
+    public function store(StoreOrdenRequest $request)
+    {
+        $validated = $request->validated();
+        try{
+            DB::transaction(function () use ($validated) {
+                $total = collect($validated['items'])->sum(function ($item) {
+                    return $item['cantidad'] * $item['costoProducto'];
+                });
+                $orden = Orden::create([
+                    'total' => $total,
+                    'estado' => 'solicitado',
+                    'usuario_id' => Auth::id(),
+                    'proveedor_id' => $validated['proveedor_id'],
+                ]);
+
+                foreach ($validated['items'] as $item) {
+                    $producto = Producto::findOrFail($item['producto_id']);
+                    DetalleOrden::create([
+                        'orden_id' => $orden->id,
+                        'producto_id' => $item['producto_id'],
+                        'cantidad' => $item['cantidad'],
+                        'costoProducto' => $producto->costo,
+                    ]);
+                }
+            });
+            return redirect()
+                ->route('pedidos.index')
+                ->with('success', 'Orden creada exitosamente');
+        }
+        catch (\Exception $e) {
+            return redirect()
+                ->route('ordenes.index')
+                ->with('error', 'Error al crear la orden');
+        }
+    }
+
+    /**
+     * Display the specified resource.
+     */
+    public function show(Orden $orden)
+    {
+        //
+        $orden->load([
+            'proveedor',
+            'usuario:id,name',
+            'items.producto:id,nombre,stock',
+        ]);
+        //dd($orden);
+        return Inertia::render('Ordenes/show', [
+            'orden' => $orden,
+        ]);
+    }
+
+    /**
+     * Show the form for editing the specified resource.
+     */
+    public function edit(string $id)
+    {
+        //
+    }
+
+    /**
+     * Update the specified resource in storage.
+     */
+    public function update(Request $request, string $id)
+    {
+        //
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     */
+    public function destroy(string $id)
+    {
+        //
+    }
+}
