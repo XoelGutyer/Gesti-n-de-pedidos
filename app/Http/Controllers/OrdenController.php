@@ -75,6 +75,7 @@ class OrdenController extends Controller
                 $total = collect($validated['items'])->sum(function ($item) {
                     return $item['cantidad'] * $item['costoProducto'];
                 });
+
                 $orden = Orden::create([
                     'total' => $total,
                     'estado' => 'solicitado',
@@ -142,5 +143,43 @@ class OrdenController extends Controller
     public function destroy(string $id)
     {
         //
+    }
+
+    public function actualizarEstado(Request $request, Orden $orden){
+        
+        $validated = $request->validate([
+            'estado' => 'required|in:solicitado,recibido,cancelado',
+        ]);
+        $nuevoEstado = $validated['estado']; 
+        $anteriorEstado = $orden->estado;
+        
+        if($nuevoEstado ===$anteriorEstado){
+            return back();
+        }
+
+        if(in_array($anteriorEstado, ['recibido', 'cancelado'])){
+            return back()->with('error', 'No se puede modificar el estado de una orden cancelada o recibida');
+        }
+        
+        try{
+            DB::transaction(function () use ($orden, $nuevoEstado, $anteriorEstado) {
+                $orden->update(['estado' => $nuevoEstado]);
+
+                if($nuevoEstado === 'recibido'){
+                    foreach($orden->items as $item ){
+                        $producto = Producto::lockForUpdate()->find($item->producto_id);                    
+                        $producto->increment('stock', $item->cantidad);
+
+                        //$producto->update(['costo'=> $item->cost]);
+                    }
+                }
+            });
+            $mensaje = $nuevoEstado ==='recibido' ? 'Mercaderia marcada como recibida y stock actualizado'
+            : 'Estado de la orden actualizado correctamente.';
+            return back()->with('success', $mensaje);
+        }
+        catch(\Exception $e){
+            return back()->with('error', 'Error al actualizar el estado ' . $e->getMessage());
+        }
     }
 }

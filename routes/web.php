@@ -108,6 +108,7 @@ Route::middleware(['auth', 'verified','role:admin,preventista,cliente'])->group(
     Route::get('/ordenes/{orden}/edit', [App\Http\Controllers\OrdenController::class, 'edit'])->name('ordenes.edit');
     Route::put('/ordenes/{orden}', [App\Http\Controllers\OrdenController::class, 'update'])->name('ordenes.update');
     Route::delete('/ordenes/{orden}', [App\Http\Controllers\OrdenController::class, 'destroy'])->name('ordenes.destroy');
+    Route::patch('/ordenes/{orden}/estado', [App\Http\Controllers\OrdenController::class, 'actualizarEstado'])->name('ordenes.actualizar-estado');
 });
 
 require __DIR__.'/settings.php';
