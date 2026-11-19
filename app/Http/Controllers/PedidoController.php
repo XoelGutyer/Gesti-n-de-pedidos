@@ -23,9 +23,13 @@ class PedidoController extends Controller
      */
 public function index(Request $request)
 {
+    $user = $request->user();
+
     $filtros = $request->only(['desde', 'hasta', 'cliente_id']);
 
-    $pedidos = Pedido::with(['cliente', 'usuario', 'items.producto'])
+    $pedidos = Pedido::query()
+        ->visibleTo($user)
+        ->with(['cliente', 'usuario', 'items.producto'])
         ->when($filtros['desde'] ?? null, fn ($q, $desde) => $q->whereDate('fecha', '>=', $desde))
         ->when($filtros['hasta'] ?? null, fn ($q, $hasta) => $q->whereDate('fecha', '<=', $hasta))
         ->when($filtros['cliente_id'] ?? null, fn ($q, $id) => $q->where('cliente_id', $id))
@@ -33,6 +37,7 @@ public function index(Request $request)
         ->get();
 
     return Inertia::render('Pedidos/Index', [
+        'usuario' => $user->only(['id', 'name', 'role']),
         'pedidos'  => $pedidos,
         'clientes' => Cliente::orderBy('nombre')->get(['id', 'nombre', 'email']),
         'filtros'  => $filtros,

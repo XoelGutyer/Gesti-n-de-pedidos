@@ -1,4 +1,4 @@
-import { Link } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import { BookOpen, FolderGit2, LayoutGrid, Package, Trash2, Truck, Users, User, Scroll } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavFooter } from '@/components/nav-footer';
@@ -15,53 +15,68 @@ import {
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
 import type { NavItem } from '@/types';
+import type { Auth, UserRole } from '@/types/auth';
+
+type InertiaSharedProps = {
+    auth: Auth;
+    [key: string]: unknown;
+};
 
 const mainNavItems: NavItem[] = [
+    
     {
         title: 'Dashboard',
         href: dashboard(),
         icon: LayoutGrid,
+        roles: ['admin'],
     },
     //aca agrego los items del menu lateral
     {
         title: 'Proveedores',
         href: '/proveedores',
         icon: Truck,
+        roles: ['admin'],
     },
 
     {
     title: 'Productos',
     href: '/productos',
     icon: Package,
+    roles: ['admin'],
     },
 
     {
     title: 'Usuarios',
     href: '/usuarios',
     icon: Users,
+    roles: ['admin'],
     },
     
     {
     title: 'Clientes',
     href: '/clientes',
     icon: User,
+    roles: ['admin', 'preventista'],
     },
 
     {
     title: 'Pedidos',
     href: '/pedidos',
     icon: Scroll,
+    roles: ['admin', 'preventista', 'cliente'],
     },
+
     {
     title: 'Ventas por proveedor',
     href: '/reportes/ventas-proveedores',
-    icon: Truck 
+    icon: Truck, 
     },
 
     {
     title: 'Ordenes',
     href: '/ordenes',
     icon: Scroll,
+    roles: ['admin'],
     },
 ];
 
@@ -84,6 +99,24 @@ const footerNavItems: NavItem[] = [
 ];
 
 export function AppSidebar() {
+
+    const { props, url } = usePage<InertiaSharedProps>();
+    const currentRole: UserRole | undefined = props.auth.user?.role as UserRole | undefined;
+    
+    const canSeeItem = (item: NavItem): boolean => {
+        if (!item.roles || item.roles.length === 0) {
+            return true;
+        }
+
+        return Boolean(currentRole && item.roles.includes(currentRole));
+    };
+
+    const visibleItems = mainNavItems.filter(canSeeItem);
+
+    const isActiveRoute = (href: string): boolean => {
+        const targetPath = new URL(href, window.location.origin).pathname;
+        return url === targetPath || url.startsWith(`${targetPath}/`);
+    };
     return (
         <Sidebar collapsible="icon" variant="inset">
             <SidebarHeader>
@@ -99,7 +132,7 @@ export function AppSidebar() {
             </SidebarHeader>
 
             <SidebarContent>
-                <NavMain items={mainNavItems} />
+                <NavMain items={visibleItems} />
             </SidebarContent>
 
             <SidebarFooter>
