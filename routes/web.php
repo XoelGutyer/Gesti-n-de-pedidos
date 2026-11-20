@@ -81,6 +81,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/clientes', [ClienteController::class, 'index'])->name('clientes.index');
         Route::get('/productos', [ProductoController::class, 'index'])->name('productos.index');
         Route::get('/ordenes', [OrdenController::class, 'index'])->name('ordenes.index');
+        Route::get('/pedidos/create', [PedidoController::class, 'create'])->name('pedidos.create');
+        Route::post('/pedidos', [PedidoController::class, 'store'])->name('pedidos.store');
     });
 
     // ---------------------------------------------------------------
@@ -112,8 +114,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         // Pedidos (las rutas fijas van antes que las que tienen {pedido})
         Route::controller(PedidoController::class)->group(function () {
-            Route::get('/pedidos/create', 'create')->name('pedidos.create');
-            Route::post('/pedidos', 'store')->name('pedidos.store');
             Route::patch('/pedidos/{pedido}/estado', 'cambiarEstado');
         });
 
