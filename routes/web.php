@@ -79,6 +79,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/pedidos', [PedidoController::class, 'index'])->name('pedidos.index');
         Route::get('/usuarios', [UsuarioController::class, 'index'])->name('usuarios.index');
         Route::get('/clientes', [ClienteController::class, 'index'])->name('clientes.index');
+        Route::get('/clientes/create', [ClienteController::class, 'create'])->name('clientes.create');
+        Route::post('/clientes', [ClienteController::class, 'store'])->name('clientes.store');
         Route::get('/productos', [ProductoController::class, 'index'])->name('productos.index');
         Route::get('/ordenes', [OrdenController::class, 'index'])->name('ordenes.index');
         Route::get('/pedidos/create', [PedidoController::class, 'create'])->name('pedidos.create');
@@ -110,7 +112,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         });
 
         // Clientes
-        Route::resource('clientes', ClienteController::class)->except('index');
+Route::resource('clientes', ClienteController::class)->except(['index', 'create', 'store']);
 
         // Pedidos (las rutas fijas van antes que las que tienen {pedido})
         Route::controller(PedidoController::class)->group(function () {
