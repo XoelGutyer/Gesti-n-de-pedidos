@@ -6,9 +6,12 @@ export type BreadcrumbItem = {
     href: NonNullable<InertiaLinkProps['href']>;
 };
 
+export type UserRole = 'admin' | 'preventista' | 'cliente';
+
 export type NavItem = {
     title: string;
     href: NonNullable<InertiaLinkProps['href']>;
     icon?: LucideIcon | null;
     isActive?: boolean;
+    roles?: UserRole[];
 };

@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Attributes\Scope;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -46,6 +48,22 @@ class Pedido extends Model
 
     public function items(): HasMany{
         return $this->hasMany(DetallePedido::class);
+    }
+
+    #[Scope]
+    protected function visibleTo(Builder $query, User $user): Builder
+    {
+        if (in_array($user->role, ['admin'], true)) {
+            return $query;
+        }
+
+        if ($user->role === 'cliente') {
+            return $query->whereHas('cliente', function (Builder $clienteQuery) use ($user) {
+                $clienteQuery->where('usuario_id', $user->id);
+            });
+        }
+
+        return $query->whereKey([]);
     }
 
 }
