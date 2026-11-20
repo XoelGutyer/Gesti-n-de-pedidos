@@ -1,22 +1,27 @@
 <?php
 
-use App\Http\Controllers\ClienteController;
-use App\Http\Controllers\ProductoController;
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\ProveedorController;
 use App\Http\Controllers\Admin\UsuarioController;
-use App\Http\Controllers\PapeleraController;
-use App\Http\Controllers\PedidoController;
-use App\Http\Controllers\DashboardController;
-use App\Models\Category;
-use App\Models\Producto;
-use Inertia\Inertia;
 use App\Http\Controllers\CheckoutController;
+use App\Http\Controllers\ClienteController;
 use App\Http\Controllers\CuentaController;
-use App\Http\Controllers\ReporteController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\OrdenController;
+use App\Http\Controllers\PapeleraController;
 use App\Http\Controllers\PedidoAccionesController;
+use App\Http\Controllers\PedidoController;
+use App\Http\Controllers\ProductoController;
+use App\Http\Controllers\ProveedorController;
+use App\Http\Controllers\ReporteController;
+use App\Models\Producto;
+use Illuminate\Support\Facades\Route;
+use Inertia\Inertia;
+use Illuminate\Http\Request;
 
-
+/*
+|--------------------------------------------------------------------------
+| Públicas
+|--------------------------------------------------------------------------
+*/
 
 Route::get('/', function () {
     return Inertia::render('welcome', [
@@ -34,81 +39,121 @@ Route::get('/', function () {
     ]);
 })->name('home');
 
+/*
+|--------------------------------------------------------------------------
+| Autenticadas (todas requieren login y email verificado)
+|--------------------------------------------------------------------------
+| Se agrupan por rol de menor a mayor alcance:
+|   1. cliente + admin        -> tienda online
+|   2. preventista + admin    -> consulta / gestión operativa
+|   3. solo admin             -> administración completa
+*/
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('dashboard', DashboardController::class)->name('dashboard');
-});
 
-//podemos poner 'role:admin,preventista,cliente' segun el control de acceso que quieramos para cada ruta
-//al final del proyecto ordenaremos las rutas 
-Route::middleware(['auth', 'verified','role:admin,preventista,cliente'])->group(function () {
-    //proveedores
-    Route::get('/proveedores',[ProveedorController::class,'index'])->name('proveedores.index');
-    Route::get('/proveedores/create',[ProveedorController::class,'create'])->name('proveedores.create');
-    Route::post('/proveedores',[ProveedorController::class,'store'])->name('proveedores.store');
-    Route::get('/proveedores/{proveedor}/edit',[ProveedorController::class,'edit'])->name('proveedores.edit');
-    Route::put('/proveedores/{proveedor}',[ProveedorController::class,'update'])->name('proveedores.update');
-    Route::delete('/proveedores/{proveedor}',[ProveedorController::class,'destroy'])->name('proveedores.destroy');
-    //pedidos
-    Route::get('/pedidos',[PedidoController::class,'index'])->name('pedidos.index');
-    Route::get('/pedidos/create',[PedidoController::class,'create'])->name('pedidos.create');
-    Route::post('/pedidos',[PedidoController::class,'store'])->name('pedidos.store');
-    //pedidos acciones
-    Route::get('pedidos/remitos', [PedidoAccionesController::class, 'remitos']);
-    Route::patch('pedidos/{pedido}/marcar-pagado', [PedidoAccionesController::class, 'marcarPagado']);
-    Route::get('pedidos/{pedido}/editar-items', [PedidoAccionesController::class, 'editarItems']);
-    Route::put('pedidos/{pedido}/items', [PedidoAccionesController::class, 'actualizarItems']);
-    Route::get('pedidos/{pedido}', [PedidoAccionesController::class, 'detalle'])->whereNumber('pedido');
-    Route::patch('/pedidos/{pedido}/estado', [PedidoController::class, 'cambiarEstado']);
-    //productos
-    Route::get('/productos',[ProductoController::class,'index'])->name('productos.index');
-    Route::get('/productos/create',[ProductoController::class,'create'])->name('productos.create');
-    Route::post('/productos',[ProductoController::class,'store'])->name('productos.store');
-    Route::get('/productos/{producto}/edit',[ProductoController::class,'edit'])->name('productos.edit');
-    Route::put('/productos/{producto}',[ProductoController::class,'update'])->name('productos.update');
-    Route::delete('/productos/{producto}',[ProductoController::class,'destroy'])->name('productos.destroy');
-    Route::get('/catalogo/pdf', [ProductoController::class, 'pdf'])
-    ->name('catalogo.pdf');
-    //clientes
-    Route::resource('clientes', ClienteController::class);
-    //usuarios
-    Route::get('/usuarios', [UsuarioController::class, 'index'])
-        ->name('usuarios.index');
-    Route::patch('/usuarios/{user}/rol', [UsuarioController::class, 'updateRole'])
-        ->name('usuarios.update-role');
-    //papelera
-    Route::get('/papelera', [PapeleraController::class, 'index'])
-        ->name('papelera.index');
-    Route::patch(
-        '/papelera/productos/{producto}/activar',
-        [PapeleraController::class, 'activarProducto']
-    )->name('papelera.productos.activar');
-    Route::patch(
-        '/papelera/proveedores/{proveedor}/activar',
-        [PapeleraController::class, 'activarProveedor']
-    )->name('papelera.proveedores.activar');
-    Route::put(
-        '/papelera/clientes/{cliente}/restaurar',
-        [PapeleraController::class,'restaurarCliente']
-    )->name('papelera.clientes.activar');
-    //tienda online
-    Route::get('/checkout', [CheckoutController::class, 'create'])->name('checkout');
-    Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
-    Route::get('/pedidos/{pedido}/confirmacion', [CheckoutController::class, 'confirmacion'])
-        ->name('pedidos.confirmacion');
-    Route::get('/mi-cuenta', [CuentaController::class, 'index'])->name('mi-cuenta');
-    //reportes
-    Route::get('reportes/ventas-proveedores', [ReporteController::class, 'ventasPorProveedor']);
-    Route::get('reportes/ventas-proveedores/exportar', [ReporteController::class, 'exportar']);
-    //ordenes
-    Route::get('/ordenes', [App\Http\Controllers\OrdenController::class, 'index'])->name('ordenes.index');
-    Route::get('/ordenes/create', [App\Http\Controllers\OrdenController::class, 'create'])->name('ordenes.create');
-    Route::post('/ordenes', [App\Http\Controllers\OrdenController::class, 'store'])->name('ordenes.store');
-    Route::get('/ordenes/{orden}', [App\Http\Controllers\OrdenController::class, 'show'])->name('ordenes.show');
-    Route::get('/ordenes/{orden}/edit', [App\Http\Controllers\OrdenController::class, 'edit'])->name('ordenes.edit');
-    Route::put('/ordenes/{orden}', [App\Http\Controllers\OrdenController::class, 'update'])->name('ordenes.update');
-    Route::delete('/ordenes/{orden}', [App\Http\Controllers\OrdenController::class, 'destroy'])->name('ordenes.destroy');
-    Route::patch('/ordenes/{orden}/estado', [App\Http\Controllers\OrdenController::class, 'actualizarEstado'])->name('ordenes.actualizar-estado');
+    // Punto de entrada tras el login: cada rol va a su pantalla
+    Route::get('/inicio', function (Request $request) {
+        return in_array($request->user()->role, ['admin', 'preventista'], true)
+            ? redirect()->route('dashboard')
+            : redirect()->route('mi-cuenta');
+    })->name('inicio');
+
+
+    // ---------------------------------------------------------------
+    // Tienda online: cliente y admin
+    // ---------------------------------------------------------------
+    Route::middleware('role:cliente,admin,preventista')->group(function () {
+        Route::get('/checkout', [CheckoutController::class, 'create'])->name('checkout');
+        Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
+        Route::get('/pedidos/{pedido}/confirmacion', [CheckoutController::class, 'confirmacion'])
+            ->name('pedidos.confirmacion');
+        Route::get('/mi-cuenta', [CuentaController::class, 'index'])->name('mi-cuenta');
+    });
+
+    // ---------------------------------------------------------------
+    // Operativas: preventista y admin
+    // ---------------------------------------------------------------
+    Route::middleware('role:preventista,admin')->group(function () {
+        Route::get('dashboard', DashboardController::class)->name('dashboard');
+        Route::get('/proveedores', [ProveedorController::class, 'index'])->name('proveedores.index');
+        Route::get('/pedidos', [PedidoController::class, 'index'])->name('pedidos.index');
+        Route::get('/usuarios', [UsuarioController::class, 'index'])->name('usuarios.index');
+        Route::get('/clientes', [ClienteController::class, 'index'])->name('clientes.index');
+        Route::get('/productos', [ProductoController::class, 'index'])->name('productos.index');
+        Route::get('/ordenes', [OrdenController::class, 'index'])->name('ordenes.index');
+    });
+
+    // ---------------------------------------------------------------
+    // Administración: solo admin
+    // ---------------------------------------------------------------
+    Route::middleware('role:admin')->group(function () {
+
+        // Proveedores (el index está en el grupo preventista/admin)
+        Route::controller(ProveedorController::class)->group(function () {
+            Route::get('/proveedores/create', 'create')->name('proveedores.create');
+            Route::post('/proveedores', 'store')->name('proveedores.store');
+            Route::get('/proveedores/{proveedor}/edit', 'edit')->name('proveedores.edit');
+            Route::put('/proveedores/{proveedor}', 'update')->name('proveedores.update');
+            Route::delete('/proveedores/{proveedor}', 'destroy')->name('proveedores.destroy');
+        });
+
+        // Productos
+        Route::controller(ProductoController::class)->group(function () {
+            Route::get('/productos/create', 'create')->name('productos.create');
+            Route::post('/productos', 'store')->name('productos.store');
+            Route::get('/productos/{producto}/edit', 'edit')->name('productos.edit');
+            Route::put('/productos/{producto}', 'update')->name('productos.update');
+            Route::delete('/productos/{producto}', 'destroy')->name('productos.destroy');
+            Route::get('/catalogo/pdf', 'pdf')->name('catalogo.pdf');
+        });
+
+        // Clientes
+        Route::resource('clientes', ClienteController::class)->except('index');
+
+        // Pedidos (las rutas fijas van antes que las que tienen {pedido})
+        Route::controller(PedidoController::class)->group(function () {
+            Route::get('/pedidos/create', 'create')->name('pedidos.create');
+            Route::post('/pedidos', 'store')->name('pedidos.store');
+            Route::patch('/pedidos/{pedido}/estado', 'cambiarEstado');
+        });
+
+        Route::controller(PedidoAccionesController::class)->group(function () {
+            Route::get('pedidos/remitos', 'remitos');
+            Route::get('pedidos/{pedido}', 'detalle')->whereNumber('pedido');
+            Route::get('pedidos/{pedido}/editar-items', 'editarItems');
+            Route::put('pedidos/{pedido}/items', 'actualizarItems');
+            Route::patch('pedidos/{pedido}/marcar-pagado', 'marcarPagado');
+        });
+
+        // Órdenes (create antes que {orden})
+        Route::controller(OrdenController::class)->group(function () {
+            Route::get('/ordenes/create', 'create')->name('ordenes.create');
+            Route::post('/ordenes', 'store')->name('ordenes.store');
+            Route::get('/ordenes/{orden}', 'show')->name('ordenes.show');
+            Route::get('/ordenes/{orden}/edit', 'edit')->name('ordenes.edit');
+            Route::put('/ordenes/{orden}', 'update')->name('ordenes.update');
+            Route::delete('/ordenes/{orden}', 'destroy')->name('ordenes.destroy');
+            Route::patch('/ordenes/{orden}/estado', 'actualizarEstado')->name('ordenes.actualizar-estado');
+        });
+
+        // Usuarios (el index está en el grupo preventista/admin)
+        Route::patch('/usuarios/{user}/rol', [UsuarioController::class, 'updateRole'])
+            ->name('usuarios.update-role');
+
+        // Papelera
+        Route::controller(PapeleraController::class)->prefix('papelera')->group(function () {
+            Route::get('/', 'index')->name('papelera.index');
+            Route::patch('/productos/{producto}/activar', 'activarProducto')->name('papelera.productos.activar');
+            Route::patch('/proveedores/{proveedor}/activar', 'activarProveedor')->name('papelera.proveedores.activar');
+            Route::put('/clientes/{cliente}/restaurar', 'restaurarCliente')->name('papelera.clientes.activar');
+        });
+
+        // Reportes
+        Route::controller(ReporteController::class)->prefix('reportes')->group(function () {
+            Route::get('/ventas-proveedores', 'ventasPorProveedor');
+            Route::get('/ventas-proveedores/exportar', 'exportar');
+        });
+    });
 });
 
 require __DIR__.'/settings.php';

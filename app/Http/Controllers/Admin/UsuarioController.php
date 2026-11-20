@@ -14,7 +14,6 @@ class UsuarioController extends Controller
 
     public function index(Request $request): Response
     {
-        abort_unless($request->user()?->role === 'admin', 403);
 
         $users = User::query()
             ->select('id', 'name', 'email', 'role', 'created_at')
