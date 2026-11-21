@@ -68,6 +68,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
+import UsuariosIndex from "../Usuarios";
 
 const ESTADOS = [
     { value: "pendiente", label: "Pendiente" },
@@ -142,7 +143,12 @@ export default function Index({ pedidos, usuario, clientes, filtros, flash }: Pr
         <div className="p-6">
             <Head title="Pedidos" />
             <div className="mb-6 flex items-center justify-between gap-2">
-                <h1 className="text-2xl font-bold text-white">Pedidos</h1>
+                {usuario.role === 'admin' ? (
+                    <h1 className="text-2xl font-bold text-white">Pedidos</h1>
+                ) : (
+                    <h1 className="text-2xl font-bold text-white">Mis Pedidos</h1>
+                )}
+
 
                 <div className="flex items-center gap-2">
                     {seleccion.length > 0 && (
@@ -192,82 +198,82 @@ export default function Index({ pedidos, usuario, clientes, filtros, flash }: Pr
                         className="h-9 rounded-md border border-gray-300 bg-white px-3 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white"
                     />
                 </div>
-                
-                {usuario.role ==='admin' && (
-                <div className="flex flex-col gap-1">
-                    <label className="text-xs text-gray-400">Cliente</label>
-                    <Popover open={abierto} onOpenChange={setAbierto}>
-                        <PopoverTrigger asChild>
-                            <Button
-                                variant="outline"
-                                role="combobox"
-                                aria-expanded={abierto}
-                                className="h-9 w-[240px] justify-between font-normal"
+
+                {usuario.role === 'admin' && (
+                    <div className="flex flex-col gap-1">
+                        <label className="text-xs text-gray-400">Cliente</label>
+                        <Popover open={abierto} onOpenChange={setAbierto}>
+                            <PopoverTrigger asChild>
+                                <Button
+                                    variant="outline"
+                                    role="combobox"
+                                    aria-expanded={abierto}
+                                    className="h-9 w-[240px] justify-between font-normal"
+                                >
+                                    <span className="truncate">
+                                        {clienteSeleccionado?.nombre ??
+                                            "Todos los clientes"}
+                                    </span>
+                                    <ChevronsUpDown className="size-4 opacity-50" />
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent
+                                className="w-[300px] p-0"
+                                align="start"
                             >
-                                <span className="truncate">
-                                    {clienteSeleccionado?.nombre ??
-                                        "Todos los clientes"}
-                                </span>
-                                <ChevronsUpDown className="size-4 opacity-50" />
-                            </Button>
-                        </PopoverTrigger>
-                        <PopoverContent
-                            className="w-[300px] p-0"
-                            align="start"
-                        >
-                            <Command>
-                                <CommandInput placeholder="Buscar por nombre o correo..." />
-                                <CommandList>
-                                    <CommandEmpty>
-                                        No se encontró ningún cliente.
-                                    </CommandEmpty>
-                                    <CommandGroup>
-                                        <CommandItem
-                                            value="todos los clientes"
-                                            onSelect={() => {
-                                                setClienteId("todos");
-                                                setAbierto(false);
-                                            }}
-                                        >
-                                            Todos los clientes
-                                        </CommandItem>
-                                        {clientes.map((c) => (
+                                <Command>
+                                    <CommandInput placeholder="Buscar por nombre o correo..." />
+                                    <CommandList>
+                                        <CommandEmpty>
+                                            No se encontró ningún cliente.
+                                        </CommandEmpty>
+                                        <CommandGroup>
                                             <CommandItem
-                                                key={c.id}
-                                                value={`${c.nombre} ${c.email ?? ""} ${c.id}`}
+                                                value="todos los clientes"
                                                 onSelect={() => {
-                                                    setClienteId(
-                                                        String(c.id),
-                                                    );
+                                                    setClienteId("todos");
                                                     setAbierto(false);
                                                 }}
                                             >
-                                                <Check
-                                                    className={
-                                                        clienteId ===
-                                                            String(c.id)
-                                                            ? "opacity-100"
-                                                            : "opacity-0"
-                                                    }
-                                                />
-                                                <div className="flex min-w-0 flex-col">
-                                                    <span className="truncate">
-                                                        {c.nombre}
-                                                    </span>
-                                                    {c.email && (
-                                                        <span className="truncate text-xs text-gray-400">
-                                                            {c.email}
-                                                        </span>
-                                                    )}
-                                                </div>
+                                                Todos los clientes
                                             </CommandItem>
-                                        ))}
-                                    </CommandGroup>
-                                </CommandList>
-                            </Command>
-                        </PopoverContent>
-                    </Popover>
-                </div>
+                                            {clientes.map((c) => (
+                                                <CommandItem
+                                                    key={c.id}
+                                                    value={`${c.nombre} ${c.email ?? ""} ${c.id}`}
+                                                    onSelect={() => {
+                                                        setClienteId(
+                                                            String(c.id),
+                                                        );
+                                                        setAbierto(false);
+                                                    }}
+                                                >
+                                                    <Check
+                                                        className={
+                                                            clienteId ===
+                                                                String(c.id)
+                                                                ? "opacity-100"
+                                                                : "opacity-0"
+                                                        }
+                                                    />
+                                                    <div className="flex min-w-0 flex-col">
+                                                        <span className="truncate">
+                                                            {c.nombre}
+                                                        </span>
+                                                        {c.email && (
+                                                            <span className="truncate text-xs text-gray-400">
+                                                                {c.email}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </CommandItem>
+                                            ))}
+                                        </CommandGroup>
+                                    </CommandList>
+                                </Command>
+                            </PopoverContent>
+                        </Popover>
+                    </div>
                 )}
 
 
@@ -349,7 +355,8 @@ export default function Index({ pedidos, usuario, clientes, filtros, flash }: Pr
 
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-2">
-                                                <Select
+                                                {usuario.role === 'admin' && (
+                                                    <Select
                                                     value={pedido.estado}
                                                     onValueChange={(valor) =>
                                                         cambiarEstado(
@@ -372,6 +379,7 @@ export default function Index({ pedidos, usuario, clientes, filtros, flash }: Pr
                                                         ))}
                                                     </SelectContent>
                                                 </Select>
+                                                )}
 
                                                 <Button
                                                     size="icon"
@@ -388,7 +396,7 @@ export default function Index({ pedidos, usuario, clientes, filtros, flash }: Pr
                                                     </Link>
                                                 </Button>
 
-                                                {!pedido.pagado && (
+                                                {!pedido.pagado && usuario.role === 'admin' &&(
                                                     <>
                                                         <Button
                                                             size="icon"

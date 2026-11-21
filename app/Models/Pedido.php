@@ -43,7 +43,7 @@ class Pedido extends Model
     }
 
     public function cliente(): BelongsTo{
-        return $this->belongsTo(Cliente::class);
+        return $this->belongsTo(Cliente::class)->withTrashed();
     }
 
     public function items(): HasMany{
@@ -57,9 +57,9 @@ class Pedido extends Model
             return $query;
         }
 
-        if ($user->role === 'cliente') {
-            return $query->whereHas('cliente', function (Builder $clienteQuery) use ($user) {
-                $clienteQuery->where('usuario_id', $user->id);
+        if ($user->role === 'preventista') {
+            return $query->whereHas('usuario', function (Builder $usuarioQuery) use ($user) {
+                $usuarioQuery->where('id', $user->id);
             });
         }
 
