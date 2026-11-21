@@ -10,47 +10,60 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
+use App\Models\Proveedor;
 
 class OrdenController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index(Request $request)
-    {
-        $orden = $request->input('orden', 'nombre');//asigna el valor por defecto en el caso que el input orden venga vacio
-        $direccion = $request->input('direccion', 'asc');
 
-        $camposPermitidos = ['nombre', 'estado', 'total'];
+public function index(Request $request)
+{
+    $orden = $request->input('orden', 'nombre');
+    $direccion = $request->input('direccion', 'asc');
 
-        if(!in_array($orden, $camposPermitidos, true)){//el true es para una comparacion estricta (calor y TD)
-            $orden = 'nombre';
-        }
+    $camposPermitidos = ['nombre', 'estado', 'total'];
 
-        if(!in_array($direccion, ['asc', 'desc'], true )){
-            $direccion = 'asc';
-        }
-        //
-        $ordenes = Orden::with(['proveedor:id,nombre', 'usuario:id,name', 'items'])
-            ->when($orden==='nombre', function ($query) use ($direccion){
-                $query->join('proveedores', 'ordenes.proveedor_id', '=', 'proveedores.id')
-                    ->orderBy('proveedores.nombre',$direccion)
-                    ->select('ordenes.*');
-            },function ($query) use ($orden, $direccion ){
-                $query->orderBy("ordenes.{$orden}",$direccion);
-            })
-//            ->latest()
-            ->orderBy($orden, $direccion)
-            ->get();
-        return Inertia::render('Ordenes/Index',[
-            'ordenes' => $ordenes,
-            'filtros' =>[
-                'orden' => $orden,
-                'direccion' => $direccion,
-            ]
-        ]);
-
+    if (!in_array($orden, $camposPermitidos, true)) {
+        $orden = 'nombre';
     }
+
+    if (!in_array($direccion, ['asc', 'desc'], true)) {
+        $direccion = 'asc';
+    }
+
+    $ordenes = Orden::with(['proveedor:id,nombre', 'usuario:id,name', 'items'])
+        ->when($request->filled('proveedor'), function ($query) use ($request) {
+            $query->where('ordenes.proveedor_id', $request->input('proveedor'));
+        })
+        ->when($request->filled('desde'), function ($query) use ($request) {
+            $query->whereDate('ordenes.created_at', '>=', $request->input('desde'));
+        })
+        ->when($request->filled('hasta'), function ($query) use ($request) {
+            $query->whereDate('ordenes.created_at', '<=', $request->input('hasta'));
+        })
+        ->when($orden === 'nombre', function ($query) use ($direccion) {
+            $query->join('proveedores', 'ordenes.proveedor_id', '=', 'proveedores.id')
+                ->orderBy('proveedores.nombre', $direccion)
+                ->select('ordenes.*');
+        }, function ($query) use ($orden, $direccion) {
+            $query->orderBy("ordenes.{$orden}", $direccion);
+        })
+        ->get();
+
+    return Inertia::render('Ordenes/Index', [
+        'ordenes' => $ordenes,
+        'proveedores' => Proveedor::orderBy('nombre')->pluck('nombre', 'id'),
+        'filtros' => [
+            'proveedor' => $request->input('proveedor', ''),
+            'desde' => $request->input('desde', ''),
+            'hasta' => $request->input('hasta', ''),
+            'orden' => $orden,
+            'direccion' => $direccion,
+        ],
+    ]);
+}
 
     /**
      * Show the form for creating a new resource.

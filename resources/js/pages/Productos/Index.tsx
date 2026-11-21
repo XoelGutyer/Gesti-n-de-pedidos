@@ -1,7 +1,7 @@
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Head, Link, router } from '@inertiajs/react';
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Head, Link, router } from "@inertiajs/react";
 import {
     ArrowDown,
     ArrowUp,
@@ -14,8 +14,9 @@ import {
     Search,
     Trash2,
     X,
-} from 'lucide-react';
-import { useState, type FormEvent, type ReactNode } from 'react';
+} from "lucide-react";
+import { useState, type FormEvent, type ReactNode } from "react";
+import { Combobox } from "@/components/combobox";
 
 interface Producto {
     id: number;
@@ -58,10 +59,13 @@ interface Props {
     };
 }
 
-const peso = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' });
+const peso = new Intl.NumberFormat("es-AR", {
+    style: "currency",
+    currency: "ARS",
+});
 
 const selectClase =
-    'rounded-md border border-gray-300 bg-transparent px-3 py-2 text-sm dark:border-gray-700';
+    "rounded-md border border-gray-300 bg-transparent px-3 py-2 text-sm dark:border-gray-700";
 
 function Ordenable({
     campo,
@@ -76,7 +80,12 @@ function Ordenable({
     onClick: (campo: string) => void;
     children: ReactNode;
 }) {
-    const Icono = orden !== campo ? ArrowUpDown : direccion === 'asc' ? ArrowUp : ArrowDown;
+    const Icono =
+        orden !== campo
+            ? ArrowUpDown
+            : direccion === "asc"
+              ? ArrowUp
+              : ArrowDown;
 
     return (
         <th className="px-4 py-3 font-semibold text-gray-700 dark:text-gray-200">
@@ -86,24 +95,46 @@ function Ordenable({
                 className="flex items-center gap-1.5 hover:text-black dark:hover:text-white"
             >
                 {children}
-                <Icono className={`size-3.5 ${orden === campo ? '' : 'text-gray-400'}`} />
+                <Icono
+                    className={`size-3.5 ${orden === campo ? "" : "text-gray-400"}`}
+                />
             </button>
         </th>
     );
 }
 
-export default function Index({ productos, proveedores, filtros, flash }: Props) {
+export default function Index({
+    productos,
+    proveedores,
+    filtros,
+    flash,
+}: Props) {
     // Lo que viene del servidor es la fuente de verdad; solo el buscador necesita estado propio
-    const [buscar, setBuscar] = useState(filtros.buscar ?? '');
-    const proveedor = filtros.proveedor ?? '';
-    const orden = filtros.orden ?? 'nombre';
-    const direccion = filtros.direccion ?? 'asc';
+    const [buscar, setBuscar] = useState(filtros.buscar ?? "");
+    const proveedor = filtros.proveedor ?? "";
+    const orden = filtros.orden ?? "nombre";
+    const direccion = filtros.direccion ?? "asc";
     const porPagina = filtros.por_pagina ?? 5;
 
-    const aplicar = (cambios: Partial<{ buscar: string; proveedor: string; orden: string; direccion: string; por_pagina: number }> = {}) => {
+    const aplicar = (
+        cambios: Partial<{
+            buscar: string;
+            proveedor: string;
+            orden: string;
+            direccion: string;
+            por_pagina: number;
+        }> = {},
+    ) => {
         router.get(
-            '/productos',
-            { buscar, proveedor, orden, direccion, por_pagina: porPagina, ...cambios },
+            "/productos",
+            {
+                buscar,
+                proveedor,
+                orden,
+                direccion,
+                por_pagina: porPagina,
+                ...cambios,
+            },
             { preserveState: true, preserveScroll: true, replace: true },
         );
     };
@@ -114,17 +145,22 @@ export default function Index({ productos, proveedores, filtros, flash }: Props)
     };
 
     const ordenarPor = (campo: string) => {
-        const nueva = orden === campo && direccion === 'asc' ? 'desc' : 'asc';
+        const nueva = orden === campo && direccion === "asc" ? "desc" : "asc";
         aplicar({ orden: campo, direccion: nueva });
     };
 
     const limpiar = () => {
-        setBuscar('');
-        router.get('/productos', {}, { preserveState: true, preserveScroll: true, replace: true });
+        setBuscar("");
+        router.get(
+            "/productos",
+            {},
+            { preserveState: true, preserveScroll: true, replace: true },
+        );
     };
 
     const irA = (url: string | null) => {
-        if (url) router.get(url, {}, { preserveScroll: true, preserveState: true });
+        if (url)
+            router.get(url, {}, { preserveScroll: true, preserveState: true });
     };
 
     const eliminar = (p: Producto) => {
@@ -133,7 +169,14 @@ export default function Index({ productos, proveedores, filtros, flash }: Props)
         }
     };
 
-    const hayFiltros = buscar !== '' || proveedor !== '';
+    const hayFiltros = buscar !== "" || proveedor !== "";
+
+    const proveedorOptions = [
+        { value: "", label: "Todos los proveedores" },
+        ...Object.entries(proveedores)
+            .map(([id, nombre]) => ({ value: id, label: nombre }))
+            .sort((a, b) => a.label.localeCompare(b.label)),
+    ];
 
     return (
         <div className="p-6">
@@ -141,7 +184,9 @@ export default function Index({ productos, proveedores, filtros, flash }: Props)
 
             <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Productos</h1>
+                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                        Productos
+                    </h1>
                     <h4 className="mt-1 text-sm text-gray-600 dark:text-gray-400">
                         Lista de productos registrados en el sistema.
                     </h4>
@@ -149,7 +194,11 @@ export default function Index({ productos, proveedores, filtros, flash }: Props)
 
                 <div className="flex flex-wrap items-center gap-2">
                     <Button variant="outline" asChild>
-                        <a href="/catalogo/pdf" target="_blank" rel="noopener noreferrer">
+                        <a
+                            href="/catalogo/pdf"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
                             <FileText />
                             Catálogo PDF
                         </a>
@@ -172,7 +221,10 @@ export default function Index({ productos, proveedores, filtros, flash }: Props)
                 </div>
             )}
 
-            <form onSubmit={buscarProductos} className="mb-4 flex flex-wrap items-center gap-3">
+            <form
+                onSubmit={buscarProductos}
+                className="mb-4 flex flex-wrap items-center gap-3"
+            >
                 <div className="flex items-center gap-2">
                     <Input
                         type="text"
@@ -181,31 +233,36 @@ export default function Index({ productos, proveedores, filtros, flash }: Props)
                         placeholder="Buscar producto"
                         className="w-56"
                     />
-                    <Button type="submit" variant="outline" size="icon" title="Buscar" aria-label="Buscar">
+                    <Button
+                        type="submit"
+                        variant="outline"
+                        size="icon"
+                        title="Buscar"
+                        aria-label="Buscar"
+                    >
                         <Search />
                     </Button>
                 </div>
 
-                <select
-                    className={selectClase}
-                    value={proveedor}
-                    onChange={(e) => aplicar({ proveedor: e.target.value })}
-                    aria-label="Filtrar por proveedor"
-                >
-                    <option value="">Todos los proveedores</option>
-                    {Object.entries(proveedores).map(([id, nombre]) => (
-                        <option key={id} value={id} className="text-black">
-                            {nombre}
-                        </option>
-                    ))}
-                </select>
+                <div className="w-64">
+                    <Combobox
+                        options={proveedorOptions}
+                        value={proveedor}
+                        onChange={(v) => aplicar({ proveedor: v })}
+                        placeholder="Todos los proveedores"
+                        searchPlaceholder="Buscar proveedor..."
+                        emptyText="No se encontraron proveedores."
+                    />
+                </div>
 
                 <label className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                     Mostrar
                     <select
                         className={selectClase}
                         value={porPagina}
-                        onChange={(e) => aplicar({ por_pagina: Number(e.target.value) })}
+                        onChange={(e) =>
+                            aplicar({ por_pagina: Number(e.target.value) })
+                        }
                     >
                         {[5, 10, 20, 50].map((n) => (
                             <option key={n} value={n} className="text-black">
@@ -217,7 +274,12 @@ export default function Index({ productos, proveedores, filtros, flash }: Props)
                 </label>
 
                 {hayFiltros && (
-                    <Button type="button" variant="ghost" size="sm" onClick={limpiar}>
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={limpiar}
+                    >
                         <X />
                         Limpiar filtros
                     </Button>
@@ -229,15 +291,31 @@ export default function Index({ productos, proveedores, filtros, flash }: Props)
                     <table className="w-full min-w-[640px] border-collapse text-left text-sm">
                         <thead>
                             <tr className="border-b border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800">
-                                <th className="px-4 py-3 font-semibold text-gray-700 dark:text-gray-200">Imagen</th>
-                                <Ordenable campo="nombre" orden={orden} direccion={direccion} onClick={ordenarPor}>
+                                <th className="px-4 py-3 font-semibold text-gray-700 dark:text-gray-200">
+                                    Imagen
+                                </th>
+                                <Ordenable
+                                    campo="nombre"
+                                    orden={orden}
+                                    direccion={direccion}
+                                    onClick={ordenarPor}
+                                >
                                     Nombre
                                 </Ordenable>
-                                <Ordenable campo="precio" orden={orden} direccion={direccion} onClick={ordenarPor}>
+                                <Ordenable
+                                    campo="precio"
+                                    orden={orden}
+                                    direccion={direccion}
+                                    onClick={ordenarPor}
+                                >
                                     Precio
                                 </Ordenable>
-                                <th className="px-4 py-3 font-semibold text-gray-700 dark:text-gray-200">Stock</th>
-                                <th className="px-4 py-3 font-semibold text-gray-700 dark:text-gray-200">Proveedor</th>
+                                <th className="px-4 py-3 font-semibold text-gray-700 dark:text-gray-200">
+                                    Stock
+                                </th>
+                                <th className="px-4 py-3 font-semibold text-gray-700 dark:text-gray-200">
+                                    Proveedor
+                                </th>
                                 <th className="sticky right-0 bg-gray-50 px-4 py-3 text-right font-semibold text-gray-700 dark:bg-gray-800 dark:text-gray-200">
                                     Acciones
                                 </th>
@@ -267,16 +345,18 @@ export default function Index({ productos, proveedores, filtros, flash }: Props)
                                             {producto.nombre}
                                         </td>
                                         <td className="px-4 py-3 tabular-nums text-gray-600 dark:text-gray-400">
-                                            {peso.format(Number(producto.precio))}
+                                            {peso.format(
+                                                Number(producto.precio),
+                                            )}
                                         </td>
                                         <td className="px-4 py-3">
                                             <Badge
                                                 variant={
                                                     producto.stock === 0
-                                                        ? 'destructive'
+                                                        ? "destructive"
                                                         : producto.stock <= 10
-                                                          ? 'secondary'
-                                                          : 'outline'
+                                                          ? "secondary"
+                                                          : "outline"
                                                 }
                                             >
                                                 {producto.stock}
@@ -287,8 +367,16 @@ export default function Index({ productos, proveedores, filtros, flash }: Props)
                                         </td>
                                         <td className="sticky right-0 bg-white px-4 py-3 group-hover:bg-gray-50 dark:bg-gray-900 dark:group-hover:bg-gray-800">
                                             <div className="flex items-center justify-end gap-2">
-                                                <Button asChild size="icon" variant="outline" title="Editar" aria-label="Editar">
-                                                    <Link href={`/productos/${producto.id}/edit`}>
+                                                <Button
+                                                    asChild
+                                                    size="icon"
+                                                    variant="outline"
+                                                    title="Editar"
+                                                    aria-label="Editar"
+                                                >
+                                                    <Link
+                                                        href={`/productos/${producto.id}/edit`}
+                                                    >
                                                         <Pencil />
                                                     </Link>
                                                 </Button>
@@ -297,7 +385,9 @@ export default function Index({ productos, proveedores, filtros, flash }: Props)
                                                     variant="outline"
                                                     title="Eliminar"
                                                     aria-label="Eliminar"
-                                                    onClick={() => eliminar(producto)}
+                                                    onClick={() =>
+                                                        eliminar(producto)
+                                                    }
                                                 >
                                                     <Trash2 className="text-red-600" />
                                                 </Button>
@@ -307,7 +397,10 @@ export default function Index({ productos, proveedores, filtros, flash }: Props)
                                 ))
                             ) : (
                                 <tr>
-                                    <td colSpan={6} className="px-6 py-10 text-center text-gray-500 dark:text-gray-400">
+                                    <td
+                                        colSpan={6}
+                                        className="px-6 py-10 text-center text-gray-500 dark:text-gray-400"
+                                    >
                                         No hay productos disponibles.
                                     </td>
                                 </tr>
@@ -318,7 +411,8 @@ export default function Index({ productos, proveedores, filtros, flash }: Props)
 
                 <div className="flex flex-wrap items-center justify-between gap-3 border-t border-gray-200 px-4 py-3 text-sm text-gray-600 dark:border-gray-700 dark:text-gray-400">
                     <span>
-                        Mostrando {productos.from ?? 0} a {productos.to ?? 0} de {productos.total} productos
+                        Mostrando {productos.from ?? 0} a {productos.to ?? 0} de{" "}
+                        {productos.total} productos
                     </span>
                     <div className="flex items-center gap-2">
                         <Button
@@ -332,7 +426,8 @@ export default function Index({ productos, proveedores, filtros, flash }: Props)
                             Anterior
                         </Button>
                         <span>
-                            Página {productos.current_page} de {productos.last_page}
+                            Página {productos.current_page} de{" "}
+                            {productos.last_page}
                         </span>
                         <Button
                             type="button"

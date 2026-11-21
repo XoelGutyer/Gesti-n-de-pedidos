@@ -1,5 +1,4 @@
-
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, Link, router, useForm } from '@inertiajs/react';
 
 type Role = 'admin' | 'preventista' | 'cliente';
 
@@ -24,6 +23,9 @@ type Props = {
         current_page: number;
         last_page: number;
         total: number;
+    };
+    filters: {
+        buscar: string;
     };
 };
 
@@ -75,8 +77,21 @@ function RoleEditor({
         </div>
     );
 }
+export default function UsuariosIndex({ users, filters }: Props) {
+    const { data, setData } = useForm({
+        buscar: filters.buscar ?? '',
+    });
 
-export default function UsuariosIndex({ users }: Props) {
+    const buscarUsuarios = (event: React.FormEvent) => {
+        event.preventDefault();
+
+        router.get('/usuarios', data, {
+            preserveState: true,
+            preserveScroll: true,
+            replace: true,
+        });
+    };
+
     return (
         <>
             <Head title="Administración de usuarios" />
@@ -92,7 +107,41 @@ export default function UsuariosIndex({ users }: Props) {
                             sus permisos.
                         </p>
                     </div>
+<form
+    onSubmit={buscarUsuarios}
+    className="mb-5 flex flex-col gap-3 sm:flex-row"
+>
+    <input
+        type="text"
+        value={data.buscar}
+        onChange={(e) => setData('buscar', e.target.value)}
+        placeholder="Buscar por usuario o correo electrónico..."
+        className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+    />
 
+    <button
+        type="submit"
+        className="rounded-xl bg-blue-600 px-6 py-3 text-sm font-medium text-white hover:bg-blue-700"
+    >
+        Buscar
+    </button>
+
+    {filters.buscar && (
+        <button
+            type="button"
+            onClick={() => {
+                setData('buscar', '');
+                router.get('/usuarios', {}, {
+                    preserveState: true,
+                    preserveScroll: true,
+                });
+            }}
+            className="rounded-xl border border-gray-300 px-6 py-3 text-sm font-medium hover:bg-gray-100 dark:border-gray-700 dark:hover:bg-gray-800"
+        >
+            Limpiar
+        </button>
+    )}
+</form>
                     <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-3">
                         <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
                             <p className="text-sm text-gray-500">

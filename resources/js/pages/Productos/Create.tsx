@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 interface Props {
     proveedores: Record<number, string>;
 }
+import { Combobox } from "@/components/combobox";
 export default function create({ proveedores }: Props) {
     const { data, setData, post, processing, errors } = useForm({
         nombre: "",
@@ -14,6 +15,11 @@ export default function create({ proveedores }: Props) {
         imagen: null as File | null,
         proveedor_id: "",
     });
+
+const proveedorOptions = Object.entries(proveedores)
+    .map(([id, nombre]) => ({ value: id, label: nombre }))
+    .sort((a, b) => a.label.localeCompare(b.label));
+
     const submit = (e: FormEvent) => {
         e.preventDefault();
         post("/productos", {
@@ -141,29 +147,14 @@ export default function create({ proveedores }: Props) {
                     <div className="flex flex-col gap-1.5">
                         <label className="text-sm font-medium">Proveedor</label>
 
-                        <select
-                            value={data.proveedor_id}
-                            onChange={(e) =>
-                                setData("proveedor_id", e.target.value)
-                            }
-                            className="w-full appearance-none px-3 py-2 bg-transparent border border-gray-500 rounded-md shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed "
-                        >
-                            <option
-                                value=""
-                                className="text-gray-800 bg-gray-200"
-                            >
-                                Seleccione un proveedor
-                            </option>
-                            {Object.entries(proveedores).map(([id, nombre]) => (
-                                <option
-                                    key={id}
-                                    value={id}
-                                    className="bg-gray-200 text-gray-800"
-                                >
-                                    {nombre}
-                                </option>
-                            ))}
-                        </select>
+                        <Combobox
+    options={proveedorOptions}
+    value={data.proveedor_id}
+    onChange={(v) => setData("proveedor_id", v)}
+    placeholder="Seleccione un proveedor"
+    searchPlaceholder="Buscar proveedor..."
+    emptyText="No se encontraron proveedores."
+/>
                         {errors.proveedor_id && (
                             <div className="mt-1 text-sm text-red-500">
                                 {errors.proveedor_id}

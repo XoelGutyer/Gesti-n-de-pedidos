@@ -12,18 +12,28 @@ use Inertia\Response;
 class UsuarioController extends Controller
 {
 
-    public function index(Request $request): Response
-    {
+public function index(Request $request)
+{
+    $buscar = trim($request->input('buscar', ''));
 
-        $users = User::query()
-            ->select('id', 'name', 'email', 'role', 'created_at')
-            ->orderBy('name')
-            ->paginate(15);
+    $users = User::query()
+        ->when($buscar, function ($query, $buscar) {
+            $query->where(function ($q) use ($buscar) {
+                $q->where('name', 'LIKE', "%{$buscar}%")
+                  ->orWhere('email', 'LIKE', "%{$buscar}%");
+            });
+        })
+        ->orderBy('id', 'desc')
+        ->paginate(15)
+        ->withQueryString();
 
-        return Inertia::render('Usuarios/index', [
-            'users' => $users,
-        ]);
-    }
+    return Inertia::render('Usuarios/index', [
+        'users' => $users,
+        'filters' => [
+            'buscar' => $buscar,
+        ],
+    ]);
+}
 
     public function updateRole(Request $request, User $user): RedirectResponse
     {

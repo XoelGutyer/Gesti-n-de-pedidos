@@ -85,7 +85,7 @@ export default function VentasProveedores({ desde, hasta, proveedores, totales }
                             </Button>
                             <Button asChild variant="outline">
                                 <a href={`${BASE}/exportar?${params}`}>
-                                    <Download /> Exportar CSV
+                                    <Download /> Exportar Excel
                                 </a>
                             </Button>
                         </form>

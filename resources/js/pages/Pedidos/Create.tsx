@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Link, useForm } from "@inertiajs/react";
 import { X } from "lucide-react";
+import { useMemo } from "react";
+import { Combobox } from "@/components/combobox";
 
 interface Cliente {
     id: number;
@@ -27,6 +29,20 @@ export default function create({ clientes, productos }: Props) {
         cliente_id: '',
         items: [{ producto_id: '', cantidad: 1 }]
     });
+
+    const clienteOptions = useMemo(
+    () => clientes.map((c) => ({ value: String(c.id), label: c.nombre })),
+    [clientes],
+);
+
+const productoOptions = useMemo(
+    () =>
+        productos.map((p) => ({
+            value: String(p.id),
+            label: `${p.nombre} - $${p.precio} (Stock: ${p.stock})`,
+        })),
+    [productos],
+);
 
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -61,19 +77,14 @@ export default function create({ clientes, productos }: Props) {
                 <form onSubmit={submit} className="space-y-6 flex flex-col gap-3">
                     <div className="flex flex-col gap-1.5">
                         <label>Cliente</label>
-                        <select
-                            id="cliente_id"
-                            value={data.cliente_id}
-                            onChange={(e) => setData('cliente_id', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-500 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        >
-                            <option value="" className="text-gray-800 bg-gray-200">Seleccione un cliente</option>
-                            {clientes.map((cliente) => (
-                                <option key={cliente.id} value={cliente.id} className="text-gray-800 bg-gray-200">
-                                    {cliente.nombre}
-                                </option>
-                            ))}
-                        </select>
+                        <Combobox
+    options={clienteOptions}
+    value={data.cliente_id}
+    onChange={(v) => setData("cliente_id", v)}
+    placeholder="Seleccione un cliente"
+    searchPlaceholder="Buscar cliente..."
+    emptyText="No se encontraron clientes."
+/>
                         <InputError message={errors.cliente_id} className="mt-1" />
                     </div>
 
@@ -99,18 +110,14 @@ export default function create({ clientes, productos }: Props) {
                                 <div key={index} className="flex items-end gap-3 p-4 rounded-md border">
                                     <div className="flex-1">
                                         <label>Producto</label>
-                                        <select
-                                            value={item.producto_id}
-                                            onChange={(e) => cambiarItem(index, 'producto_id', e.target.value)}
-                                            className="w-full px-3 py-2 border border-gray-500 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        >
-                                            <option value="" className="text-gray-800 bg-gray-200">Seleccione un producto</option>
-                                            {productos.map((producto) => (
-                                                <option key={producto.id} value={producto.id} className="text-gray-800 bg-gray-200">
-                                                    {producto.nombre} - ${producto.precio} (Stock: {producto.stock})
-                                                </option>
-                                            ))}
-                                        </select>
+                                        <Combobox
+    options={productoOptions}
+    value={item.producto_id}
+    onChange={(v) => cambiarItem(index, "producto_id", v)}
+    placeholder="Seleccione un producto"
+    searchPlaceholder="Buscar producto..."
+    emptyText="No se encontraron productos."
+/>
                                     </div>
 
                                     <div>

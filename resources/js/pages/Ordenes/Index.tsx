@@ -1,10 +1,13 @@
+import { Combobox } from "@/components/combobox";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Head, Link, router } from "@inertiajs/react";
-import { useState } from "react";
-import { Check, Eye, FileText, Pencil, Plus } from "lucide-react";
+import { Eye, Pencil, Plus, X } from "lucide-react";
 
-interface Filtro{
-    ordenes: string;
+interface Filtros {
+    proveedor: string;
+    desde: string;
+    hasta: string;
     orden: string;
     direccion: string;
 }
@@ -34,37 +37,56 @@ interface Orden {
 
 interface Props {
     ordenes: Orden[];
-    filtros: Filtro
+    proveedores: Record<number, string>;
+    filtros: Filtros;
     flash?: {
         success?: string;
     };
 }
 
-export default function Index({ ordenes, filtros, flash }: Props) {
-    const [orden, setOrden] = useState(filtros.orden ?? 'nombre');
-    const [direccion, setDireccion] = useState(
-        filtros.direccion ?? 'asc'
-    );
+export default function Index({ ordenes, proveedores, filtros, flash }: Props) {
+    const proveedor = filtros.proveedor ?? "";
+    const desde = filtros.desde ?? "";
+    const hasta = filtros.hasta ?? "";
+    const orden = filtros.orden ?? "nombre";
+    const direccion = filtros.direccion ?? "asc";
 
-    const ordenarPor = (campo : string) =>{
-        let nuevaDireccion = 'asc';
-        if(orden === campo && direccion === 'asc'){
-            nuevaDireccion = 'desc';
-        }
-        setOrden(campo);
-        setDireccion(nuevaDireccion);
+    const proveedorOptions = [
+        { value: "", label: "Todos los proveedores" },
+        ...Object.entries(proveedores)
+            .map(([id, nombre]) => ({ value: id, label: nombre }))
+            .sort((a, b) => a.label.localeCompare(b.label)),
+    ];
 
-        router.get('/ordenes',{
-            orden: campo,
-            direccion: nuevaDireccion,
-        })
-    }   
-    const indicadorOrden = (campo : string ) =>{
-        if(orden !== campo){
-            return '';
-        }
-        return direccion === 'asc' ? ' ↑' : ' ↓';
-    }
+    const aplicar = (
+        cambios: Partial<Filtros> = {},
+    ) => {
+        router.get(
+            "/ordenes",
+            { proveedor, desde, hasta, orden, direccion, ...cambios },
+            { preserveState: true, preserveScroll: true, replace: true },
+        );
+    };
+
+    const ordenarPor = (campo: string) => {
+        const nueva = orden === campo && direccion === "asc" ? "desc" : "asc";
+        aplicar({ orden: campo, direccion: nueva });
+    };
+
+    const indicadorOrden = (campo: string) => {
+        if (orden !== campo) return "";
+        return direccion === "asc" ? " ↑" : " ↓";
+    };
+
+    const limpiar = () => {
+        router.get(
+            "/ordenes",
+            { orden, direccion },
+            { preserveState: true, preserveScroll: true, replace: true },
+        );
+    };
+
+    const hayFiltros = proveedor !== "" || desde !== "" || hasta !== "";
 
     return (
         <div className="p-6">
@@ -72,23 +94,12 @@ export default function Index({ ordenes, filtros, flash }: Props) {
             <div className="mb-6 flex items-center justify-between gap-2">
                 <h1 className="text-2xl font-bold text-white">Ordenes de compra</h1>
 
-                <div className="flex items-center gap-2">
-                    {/* {seleccion.length > 0 && (
-                        <Button
-                            variant="outline"
-                            onClick={() => abrirRemitos(seleccion)}
-                        >
-                            <FileText />
-                            Crear remitos ({seleccion.length})
-                        </Button>
-                    )} */}
-                    <Button asChild>
-                        <Link href="/ordenes/create">
-                            <Plus />
-                            Nueva orden
-                        </Link>
-                    </Button>
-                </div>
+                <Button asChild>
+                    <Link href="/ordenes/create">
+                        <Plus />
+                        Nueva orden
+                    </Link>
+                </Button>
             </div>
 
             {flash?.success && (
@@ -100,92 +111,111 @@ export default function Index({ ordenes, filtros, flash }: Props) {
                 </div>
             )}
 
+            {/* Filtros */}
+            <div className="mb-4 flex flex-wrap items-end gap-3">
+                <div className="w-64">
+                    <label className="mb-1 block text-sm text-gray-600 dark:text-gray-400">
+                        Proveedor
+                    </label>
+                    <Combobox
+                        options={proveedorOptions}
+                        value={proveedor}
+                        onChange={(v) => aplicar({ proveedor: v })}
+                        placeholder="Todos los proveedores"
+                        searchPlaceholder="Buscar proveedor..."
+                        emptyText="No se encontraron proveedores."
+                    />
+                </div>
+
+                <div>
+                    <label className="mb-1 block text-sm text-gray-600 dark:text-gray-400">
+                        Desde
+                    </label>
+                    <Input
+                        type="date"
+                        value={desde}
+                        max={hasta || undefined}
+                        onChange={(e) => aplicar({ desde: e.target.value })}
+                        className="w-44"
+                    />
+                </div>
+
+                <div>
+                    <label className="mb-1 block text-sm text-gray-600 dark:text-gray-400">
+                        Hasta
+                    </label>
+                    <Input
+                        type="date"
+                        value={hasta}
+                        min={desde || undefined}
+                        onChange={(e) => aplicar({ hasta: e.target.value })}
+                        className="w-44"
+                    />
+                </div>
+
+                {hayFiltros && (
+                    <Button type="button" variant="ghost" size="sm" onClick={limpiar}>
+                        <X />
+                        Limpiar filtros
+                    </Button>
+                )}
+            </div>
+
             <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-900">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left text-sm">
                         <thead className="border-b border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800">
                             <tr>
                                 <th className="px-6 py-4 font-semibold text-gray-700 dark:text-gray-200">ID</th>
-                                <th className="px-6 py-4 font-semibold text-gray-700 dark:text-gray-200 cursor-pointer" onClick={() => ordenarPor('nombre')}>Proveedor{indicadorOrden('nombre')}</th>
-                                <th className="px-6 py-4 font-semibold text-gray-700 dark:text-gray-200 cursor-pointer" onClick={() => ordenarPor('estado')}>Estado{indicadorOrden('estado')}</th>
-                                <th className="px-6 py-4 font-semibold text-gray-700 dark:text-gray-200 cursor-pointer" onClick={() => ordenarPor('total')}>Total{indicadorOrden('total')}</th>
+                                <th
+                                    className="cursor-pointer px-6 py-4 font-semibold text-gray-700 dark:text-gray-200"
+                                    onClick={() => ordenarPor("nombre")}
+                                >
+                                    Proveedor{indicadorOrden("nombre")}
+                                </th>
+                                <th
+                                    className="cursor-pointer px-6 py-4 font-semibold text-gray-700 dark:text-gray-200"
+                                    onClick={() => ordenarPor("estado")}
+                                >
+                                    Estado{indicadorOrden("estado")}
+                                </th>
+                                <th
+                                    className="cursor-pointer px-6 py-4 font-semibold text-gray-700 dark:text-gray-200"
+                                    onClick={() => ordenarPor("total")}
+                                >
+                                    Total{indicadorOrden("total")}
+                                </th>
                                 <th className="px-6 py-4 font-semibold text-gray-700 dark:text-gray-200">Acciones</th>
                             </tr>
                         </thead>
 
                         <tbody>
                             {ordenes.length > 0 ? (
-                                ordenes.map((orden) => (
+                                ordenes.map((o) => (
                                     <tr
-                                        key={orden.id}
+                                        key={o.id}
                                         className="border-b border-gray-100 last:border-b-0 hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-gray-800"
                                     >
-                                        {/* <td className="px-4 py-4">
-                                            <input
-                                                type="checkbox"
-                                                className="size-4"
-                                                checked={seleccion.includes(
-                                                    pedido.id,
-                                                )}
-                                                onChange={() =>
-                                                    alternar(pedido.id)
-                                                }
-                                                aria-label={`Seleccionar pedido ${pedido.id}`}
-                                            />
-                                        </td> */}
+                                        <td className="px-6 py-4 text-gray-600 dark:text-gray-400">{o.id}</td>
                                         <td className="px-6 py-4 text-gray-600 dark:text-gray-400">
-                                            {orden.id}
+                                            {o.proveedor.nombre}
                                         </td>
+                                        <td className="px-6 py-4 text-gray-600 dark:text-gray-400">{o.estado}</td>
                                         <td className="px-6 py-4 text-gray-600 dark:text-gray-400">
-                                            {orden.proveedor.nombre}
+                                            ${Number(o.total).toFixed(2)}
                                         </td>
-                                        <td className="px-6 py-4 text-gray-600 dark:text-gray-400">
-                                            {orden.estado}
-                                        </td>
-                                        <td className="px-6 py-4 text-gray-600 dark:text-gray-400">
-                                            ${Number(orden.total).toFixed(2)}
-                                        </td>
-
                                         <td className="px-6 py-4">
                                             <div className="flex flex-wrap gap-2">
-
-                                                <Button
-                                                    size="sm"
-                                                    variant="outline"
-                                                    asChild
-                                                >
-                                                    <Link
-                                                        href={`/ordenes/${orden.id}`}
-                                                    >
+                                                <Button size="sm" variant="outline" asChild>
+                                                    <Link href={`/ordenes/${o.id}`}>
                                                         <Eye /> Ver detalle
                                                     </Link>
                                                 </Button>
-
-                                                <Button
-                                                    size="sm"
-                                                    variant="outline"
-                                                    asChild
-                                                >
-                                                    <Link
-                                                        href={`/ordenes/${orden.id}/editar-items`}
-                                                    >
-                                                        <Pencil />{" "}
-                                                        Editar ítems
+                                                <Button size="sm" variant="outline" asChild>
+                                                    <Link href={`/ordenes/${o.id}/editar-items`}>
+                                                        <Pencil /> Editar ítems
                                                     </Link>
                                                 </Button>
-                                                {/* <Button
-                                                            size="sm"
-                                                            onClick={() =>
-                                                                marcarPagado(
-                                                                    pedido,
-                                                                )
-                                                            }
-                                                        >
-                                                            <Check /> Marcar
-                                                            pagado
-                                                        </Button> */}
-
-
                                             </div>
                                         </td>
                                     </tr>
@@ -196,7 +226,7 @@ export default function Index({ ordenes, filtros, flash }: Props) {
                                         colSpan={5}
                                         className="px-6 py-10 text-center text-gray-500 dark:text-gray-400"
                                     >
-                                        No hay pedidos registrados.
+                                        No hay órdenes registradas.
                                     </td>
                                 </tr>
                             )}
