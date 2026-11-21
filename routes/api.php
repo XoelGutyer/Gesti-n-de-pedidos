@@ -22,4 +22,5 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/pedidos', [PedidoController::class, 'store']);
     Route::get('/pedidos', [PedidoController::class, 'index']);
     Route::middleware('auth:sanctum')->post('/pedidos/{pedido}/pagar', [PagoController::class, 'crear']);
+    Route::get('pedidos/{id}', [PedidoController::class, 'show'])->whereNumber('id');
 });

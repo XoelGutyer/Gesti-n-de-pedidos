@@ -16,6 +16,7 @@ class ProductoController extends Controller
                 'id',
                 'nombre',
                 'precio',
+                'descuento',
                 'stock',
                 'imagen',
             ])

@@ -10,14 +10,15 @@ export default function create({ proveedores }: Props) {
         precio: "",
         costo: "",
         stock: "",
+        descuento: "0",
         imagen: null as File | null,
         proveedor_id: "",
     });
     const submit = (e: FormEvent) => {
         e.preventDefault();
-        post('/productos', {
-        forceFormData: true,
-    });
+        post("/productos", {
+            forceFormData: true,
+        });
     };
     return (
         <div className="p-6">
@@ -61,6 +62,28 @@ export default function create({ proveedores }: Props) {
                             </div>
                         )}
                     </div>
+                    <div className="flex flex-col gap-1.5">
+                        <label className="text-sm font-medium">
+                            Descuento (%)
+                        </label>
+                        <input
+                            type="number"
+                            min="0"
+                            max="100"
+                            step="0.01"
+                            value={data.descuento}
+                            className="w-full px-3 py-2 border border-gray-500 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="Ej. 10"
+                            onChange={(e) =>
+                                setData("descuento", e.target.value)
+                            }
+                        />
+                        {errors.descuento && (
+                            <div className="mt-1 text-sm text-red-500">
+                                {errors.descuento}
+                            </div>
+                        )}
+                    </div>
 
                     <div className="flex flex-col gap-1.5">
                         <label className="text-sm font-medium">Costo</label>
@@ -99,7 +122,7 @@ export default function create({ proveedores }: Props) {
                         <label className="text-sm font-medium">Imagen</label>
                         // el campo de imagen es de tipo file
                         <input
-                            accept="image/*" 
+                            accept="image/*"
                             type="file"
                             className="w-full px-3 py-2 border border-gray-500 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                             placeholder="URL de la imagen del producto"

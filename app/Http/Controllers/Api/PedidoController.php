@@ -111,4 +111,31 @@ class PedidoController extends Controller
 
     return response()->json(['data' => $pedidos]);
 }
+public function show(Request $request, int $id)
+{
+    $user = $request->user();
+
+    $pedido = Pedido::query()
+        ->when(
+            $user->hasRole('preventista'),
+            fn ($q) => $q->where('usuario_id', $user->id),
+            fn ($q) => $q->where('cliente_id', $user->cliente?->id ?? 0),
+        )
+        ->with('items.producto:id,nombre')
+        ->findOrFail($id);
+
+    return response()->json([
+        'data' => [
+            'id' => $pedido->id,
+            'estado' => $pedido->estado?->value,
+            'items' => $pedido->items->map(fn ($d) => [
+                'producto_id' => $d->producto_id,
+                'nombre' => $d->producto?->nombre ?? 'Producto eliminado',
+                'cantidad' => $d->cantidad,
+                'precio' => $d->precioProducto,
+                'subtotal' => $d->subtotal,
+            ])->values(),
+        ],
+    ]);
+}
 }

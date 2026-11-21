@@ -89,6 +89,7 @@ class ProductoController extends Controller
         $data = $request->validate([
             'nombre' => 'required|string|max:255',
             'precio' => 'required|numeric|between:0,999999999.99',
+            'descuento' => 'nullable|numeric|between:0,100',
             'costo' => 'required|numeric|between:0,999999999.99',
             'stock' => 'required|integer|between:0,1000000',
             'proveedor_id' => 'required|integer|exists:proveedores,id',
@@ -96,7 +97,8 @@ class ProductoController extends Controller
         ]);
 
         $data['imagen'] = null;
-
+        $data['descuento'] = $data['descuento'] ?? 0;
+        
         if ($request->hasFile('imagen')) {
             $manager = new ImageManager(new Driver());
 
@@ -142,41 +144,44 @@ class ProductoController extends Controller
      * Update the specified resource in storage.
      */
     public function update(UpdateRequest $request, Producto $producto)
-    {
-        $data = $request->only([
-            'nombre',
-            'precio',
-            'costo',
-            'stock',
-            'proveedor_id',
-        ]);
+{
+    $data = $request->only([
+        'nombre',
+        'precio',
+        'descuento',
+        'costo',
+        'stock',
+        'proveedor_id',
+    ]);
 
-        if ($request->hasFile('imagen')) {
-            $manager = new ImageManager(new Driver());
+    $data['descuento'] = $data['descuento'] ?? 0;
 
-            $imagen = $manager
-                ->decode($request->file('imagen'))
-                ->scaleDown(width: 1200, height: 1200)
-                ->encodeUsingFormat(Format::WEBP, quality: 82);
+    if ($request->hasFile('imagen')) {
+        $manager = new ImageManager(new Driver());
 
-            $ruta = 'productosImagenes/' . uniqid('producto_') . '.webp';
+        $imagen = $manager
+            ->decode($request->file('imagen'))
+            ->scaleDown(width: 1200, height: 1200)
+            ->encodeUsingFormat(Format::WEBP, quality: 82);
 
-            Storage::disk('public')->put($ruta, (string) $imagen);
+        $ruta = 'productosImagenes/' . uniqid('producto_') . '.webp';
 
-            // Eliminar la imagen anterior si existe
-            if ($producto->imagen) {
-                Storage::disk('public')->delete($producto->imagen);
-            }
+        Storage::disk('public')->put($ruta, (string) $imagen);
 
-            $data['imagen'] = $ruta;
+        // Eliminar la imagen anterior si existe
+        if ($producto->imagen) {
+            Storage::disk('public')->delete($producto->imagen);
         }
 
-        $producto->update($data);
-
-        return redirect()
-            ->route('productos.index')
-            ->with('success', 'Producto actualizado correctamente.');
+        $data['imagen'] = $ruta;
     }
+
+    $producto->update($data);
+
+    return redirect()
+        ->route('productos.index')
+        ->with('success', 'Producto actualizado correctamente.');
+}
 
     /**
      * Remove the specified resource from storage.

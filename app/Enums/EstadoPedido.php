@@ -7,6 +7,7 @@ enum EstadoPedido: string
     case Pendiente = 'pendiente';
     case EnPreparacion = 'en_preparacion';
     case EnCamino = 'en_camino';
+    case Entregado = 'entregado';
 
     public function label(): string
     {
@@ -14,6 +15,7 @@ enum EstadoPedido: string
             self::Pendiente => 'Pendiente',
             self::EnPreparacion => 'En preparación',
             self::EnCamino => 'En camino',
+            self::Entregado => 'Entregado',
         };
     }
     
@@ -23,6 +25,7 @@ enum EstadoPedido: string
             self::Pendiente => 'Recibimos tu pedido y está pendiente de preparación.',
             self::EnPreparacion => 'Estamos preparando tu pedido.',
             self::EnCamino => 'Tu pedido ya salió y está en camino.',
+            self::Entregado => 'Tu pedido ha sido entregado.',
         };
     }
 }

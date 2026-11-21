@@ -44,7 +44,7 @@ interface Pedido {
     nota: string;
     total: number;
     pagado: boolean;
-    estado: "pendiente" | "en_preparacion" | "en_camino";
+    estado: "pendiente" | "en_preparacion" | "en_camino" | "entregado";
     cliente: {
         nombre: string;
     };
@@ -73,6 +73,7 @@ const ESTADOS = [
     { value: "pendiente", label: "Pendiente" },
     { value: "en_preparacion", label: "En preparación" },
     { value: "en_camino", label: "En camino" },
+    { value: "entregado", label: "Entregado" },
 ];
 
 const cambiarEstado = (pedido: Pedido, estado: string) => {

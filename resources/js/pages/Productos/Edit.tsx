@@ -6,6 +6,7 @@ interface Producto {
     id: number;
     nombre: string;
     precio: number;
+    descuento: number;
     costo: number;
     stock: number;
     imagen: string | null;
@@ -26,6 +27,7 @@ export default function edit({ producto, proveedores }: Props) {
     const { data, setData, put , processing, errors } = useForm({
         nombre: producto.nombre,
         precio: producto.precio.toString(),
+        descuento: producto.descuento.toString(),
         costo: producto.costo.toString(),
         stock: producto.stock.toString(),
         imagen: null as File | null,
@@ -82,7 +84,24 @@ export default function edit({ producto, proveedores }: Props) {
                             </div>
                         )}
                     </div>
-
+<div className="flex flex-col gap-1.5">
+    <label className="text-sm font-medium">Descuento (%)</label>
+    <input
+        type="number"
+        min="0"
+        max="100"
+        step="0.01"
+        value={data.descuento}
+        className="w-full px-3 py-2 border border-gray-500 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+        placeholder="Ej. 10"
+        onChange={(e) => setData("descuento", e.target.value)}
+    />
+    {errors.descuento && (
+        <div className="mt-1 text-sm text-red-500">
+            {errors.descuento}
+        </div>
+    )}
+</div>
                     <div className="flex flex-col gap-1.5">
                         <label className="text-sm font-medium">Costo</label>
                         <input
