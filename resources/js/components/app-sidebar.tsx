@@ -28,28 +28,28 @@ const mainNavItems: NavItem[] = [
         title: 'Dashboard',
         href: dashboard(),
         icon: LayoutGrid,
-        roles: ['admin'],
+        roles: ['admin', 'preventista'],
     },
     //aca agrego los items del menu lateral
     {
         title: 'Proveedores',
         href: '/proveedores',
         icon: Truck,
-        roles: ['admin'],
+        roles: ['admin','preventista'],
     },
 
     {
     title: 'Productos',
     href: '/productos',
     icon: Package,
-    roles: ['admin'],
+    roles: ['admin', 'preventista'],
     },
 
     {
     title: 'Usuarios',
     href: '/usuarios',
     icon: Users,
-    roles: ['admin'],
+    roles: ['admin','preventista'],
     },
     
     {
@@ -70,6 +70,7 @@ const mainNavItems: NavItem[] = [
     title: 'Ventas por proveedor',
     href: '/reportes/ventas-proveedores',
     icon: Truck, 
+    roles: ['admin'],
     },
 
     {
