@@ -1,4 +1,5 @@
-import { Head, Link, usePage } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
+import { useEffect } from 'react';
 
 type Detalle = {
     id: number;
@@ -19,6 +20,8 @@ type PageProps = {
         pagado: boolean;
         detalles: Detalle[];
     };
+    pago?: 'success' | 'pending' | 'failure' | null;
+    error?: string | null;
 };
 
 const formatPrice = (value: number | string) =>
@@ -29,7 +32,28 @@ const formatPrice = (value: number | string) =>
     }).format(Number(value));
 
 export default function PedidoConfirmado() {
-    const { pedido } = usePage<PageProps>().props;
+    const { pedido, pago, error } = usePage<PageProps>().props;
+
+    // El pedido ya existe: se vacía el carrito guardado en el navegador
+    useEffect(() => {
+        try {
+            localStorage.removeItem('carrito');
+        } catch {
+            // ignorar
+        }
+    }, []);
+
+    const confirmando = !pedido.pagado && (pago === 'success' || pago === 'pending');
+    const rechazado = !pedido.pagado && pago === 'failure';
+
+    const icono = pedido.pagado ? '✅' : confirmando ? '⏳' : rechazado ? '❌' : '🧾';
+    const titulo = pedido.pagado
+        ? '¡Pago recibido!'
+        : confirmando
+          ? '¡Pedido recibido!'
+          : rechazado
+            ? 'El pago no se completó'
+            : 'Pedido pendiente de pago';
 
     return (
         <>
@@ -38,13 +62,24 @@ export default function PedidoConfirmado() {
             <div className="min-h-screen bg-[#FDFDFC] text-[#1b1b18] dark:bg-[#0a0a0a] dark:text-[#EDEDEC]">
                 <main className="mx-auto max-w-2xl px-6 py-12">
                     <div className="mb-8 text-center">
-                        <div className="mb-3 text-5xl">✅</div>
-                        <h1 className="text-2xl font-semibold">
-                            ¡Pedido recibido!
-                        </h1>
+                        <div className="mb-3 text-5xl">{icono}</div>
+                        <h1 className="text-2xl font-semibold">{titulo}</h1>
                         <p className="mt-1 text-sm text-[#706f6c] dark:text-[#A1A09A]">
                             Pedido #{pedido.id} · {pedido.fecha}
                         </p>
+
+                        {confirmando && (
+                            <p className="mt-3 text-sm text-[#706f6c] dark:text-[#A1A09A]">
+                                Estamos confirmando tu pago, puede tardar unos
+                                minutos. Actualizá la página para ver el estado.
+                            </p>
+                        )}
+
+                        {error && (
+                            <div className="mt-4 rounded-md border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300">
+                                {error}
+                            </div>
+                        )}
                     </div>
 
                     <div className="rounded-xl border border-[#e5e5e0] bg-white p-6 dark:border-[#3E3E3A] dark:bg-[#161615]">
@@ -73,7 +108,13 @@ export default function PedidoConfirmado() {
                                 <dt className="text-[#706f6c] dark:text-[#A1A09A]">
                                     Pago
                                 </dt>
-                                <dd>{pedido.pagado ? 'Pagado' : 'Pendiente'}</dd>
+                                <dd>
+                                    {pedido.pagado
+                                        ? 'Pagado'
+                                        : confirmando
+                                          ? 'Confirmando'
+                                          : 'Pendiente'}
+                                </dd>
                             </div>
                         </dl>
 
@@ -102,10 +143,26 @@ export default function PedidoConfirmado() {
                         </div>
                     </div>
 
-                    <div className="mt-8 text-center">
+                    <div className="mt-8 flex flex-col items-center gap-3">
+                        {!pedido.pagado && !confirmando && (
+                            <button
+                                type="button"
+                                onClick={() =>
+                                    router.post(`/pedidos/${pedido.id}/pagar`)
+                                }
+                                className="rounded-md bg-[#1b1b18] px-6 py-3 text-sm font-medium text-white dark:bg-[#eeeeec] dark:text-[#1C1C1A]"
+                            >
+                                {rechazado ? 'Reintentar pago' : 'Pagar con Mercado Pago'}
+                            </button>
+                        )}
+
                         <Link
                             href="/"
-                            className="rounded-md bg-[#1b1b18] px-6 py-3 text-sm font-medium text-white dark:bg-[#eeeeec] dark:text-[#1C1C1A]"
+                            className={
+                                pedido.pagado || confirmando
+                                    ? 'rounded-md bg-[#1b1b18] px-6 py-3 text-sm font-medium text-white dark:bg-[#eeeeec] dark:text-[#1C1C1A]'
+                                    : 'text-sm text-[#706f6c] hover:underline dark:text-[#A1A09A]'
+                            }
                         >
                             Volver a la tienda
                         </Link>

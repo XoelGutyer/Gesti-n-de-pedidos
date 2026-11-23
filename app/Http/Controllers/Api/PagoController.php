@@ -10,47 +10,34 @@ use MercadoPago\Client\Preference\PreferenceClient;
 use MercadoPago\Exceptions\MPApiException;
 use MercadoPago\MercadoPagoConfig;
 use App\Http\Controllers\Controller;
+use App\Services\MercadoPagoService;
 
 class PagoController extends Controller
 {
-    public function crear(Pedido $pedido)
-    {
-        if ($pedido->total <= 0) {
-      return response()->json(['message' => 'El pedido no tiene un total válido'], 422);
-        }
-        if ($pedido->pagado) {
-            return response()->json(['message' => 'El pedido ya está pagado'], 422);
-        }
+    public function crear(Request $request, Pedido $pedido, MercadoPagoService $mp)
+{
+    abort_unless($pedido->usuario_id === $request->user()->id, 403);
 
-        MercadoPagoConfig::setAccessToken(config('services.mercadopago.token'));
-
-    $items = [[
-    'id'          => (string) $pedido->id,
-    'title'       => 'Pedido #' . $pedido->id,
-    'quantity'    => 1,
-    'unit_price'  => round((float) $pedido->total, 2),
-    'currency_id' => 'ARS',
-    ]];
-
-        try {
-            $preference = (new PreferenceClient())->create([
-                'items'              => $items,
-                'external_reference' => (string) $pedido->id,
-                'back_urls' => [
-                    'success' => 'miapp://pago/success',
-                    'failure' => 'miapp://pago/failure',
-                    'pending' => 'miapp://pago/pending',
-                ],
-                'auto_return'      => 'approved',
-                'notification_url' => config('services.mercadopago.webhook_url'),
-            ]);
-        } catch (MPApiException $e) {
-            Log::error('MP preferencia', ['body' => $e->getApiResponse()->getContent()]);
-            return response()->json(['message' => 'No se pudo iniciar el pago'], 502);
-        }
-
-        return response()->json(['init_point' => $preference->init_point]);
+    if ($pedido->total <= 0) {
+        return response()->json(['message' => 'El pedido no tiene un total válido'], 422);
     }
+    if ($pedido->pagado) {
+        return response()->json(['message' => 'El pedido ya está pagado'], 422);
+    }
+
+    try {
+        $url = $mp->crearPreferencia($pedido, [
+            'success' => 'miapp://pago/success',
+            'failure' => 'miapp://pago/failure',
+            'pending' => 'miapp://pago/pending',
+        ]);
+    } catch (MPApiException $e) {
+        Log::error('MP preferencia', ['body' => $e->getApiResponse()->getContent()]);
+        return response()->json(['message' => 'No se pudo iniciar el pago'], 502);
+    }
+
+    return response()->json(['init_point' => $url]);
+}
 
     public function webhook(Request $request)
     {

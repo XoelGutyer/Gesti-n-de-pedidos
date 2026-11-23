@@ -11,6 +11,9 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
+use App\Services\MercadoPagoService;
+use Illuminate\Support\Facades\Log;
+use MercadoPago\Exceptions\MPApiException;
 
 class CheckoutController extends Controller
 {
@@ -35,8 +38,9 @@ class CheckoutController extends Controller
     }
 
     /** Crea el pedido. Precios y stock se leen SIEMPRE de la base de datos. */
-    public function store(Request $request)
-    {
+  public function store(Request $request, MercadoPagoService $mp)
+{
+
         $data = $request->validate([
             'items' => ['required', 'array', 'min:1'],
             'items.*.id' => ['required', 'integer', 'exists:productos,id'],
@@ -135,9 +139,43 @@ class CheckoutController extends Controller
 
             return $pedido;
         });
+                return $this->iniciarPago($pedido, $mp);
+    }
 
+/** Reintento de pago desde la pantalla de confirmación. */
+public function pagar(Request $request, Pedido $pedido, MercadoPagoService $mp)
+{
+    abort_unless($pedido->usuario_id === $request->user()->id, 403);
+
+    if ($pedido->pagado) {
         return redirect()->route('pedidos.confirmacion', $pedido);
     }
+
+    return $this->iniciarPago($pedido, $mp);
+}
+
+private function iniciarPago(Pedido $pedido, MercadoPagoService $mp)
+{
+    try {
+        $url = $mp->crearPreferencia($pedido, [
+            'success' => route('pedidos.confirmacion', ['pedido' => $pedido, 'pago' => 'success']),
+            'pending' => route('pedidos.confirmacion', ['pedido' => $pedido, 'pago' => 'pending']),
+            'failure' => route('pedidos.confirmacion', ['pedido' => $pedido, 'pago' => 'failure']),
+        ]);
+
+        return Inertia::location($url);
+    } catch (MPApiException $e) {
+        Log::error('MP preferencia web', [
+            'status' => $e->getApiResponse()->getStatusCode(),
+            'body'   => $e->getApiResponse()->getContent(),
+        ]);
+    } catch (\Throwable $e) {
+        Log::error('MP checkout web', ['error' => $e->getMessage()]);
+    }
+
+    return redirect()->route('pedidos.confirmacion', $pedido)
+        ->with('error', 'No pudimos iniciar el pago. Podés reintentarlo.');
+}
 
     /** Pantalla de confirmación: solo la puede ver el dueño del pedido. */
     public function confirmacion(Request $request, Pedido $pedido)
@@ -163,6 +201,8 @@ class CheckoutController extends Controller
                     'precio' => $d->precioProducto,
                     'subtotal' => $d->subtotal,
                 ]),
+                'pago'  => $request->query('pago'),          // success | pending | failure | null
+                'error' => session('error'),
             ],
         ]);
     }

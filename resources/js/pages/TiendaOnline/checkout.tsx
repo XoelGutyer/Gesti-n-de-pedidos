@@ -1,5 +1,6 @@
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
+import { router } from '@inertiajs/react';
 
 type CartItem = {
     producto: {
@@ -93,6 +94,20 @@ export default function Checkout() {
     const itemsError = Object.entries(errors).find(([k]) =>
         k.startsWith('items'),
     )?.[1];
+
+    const { pedido, pago, error } = usePage<{
+    pedido: { id: number; pagado: boolean /* ...el resto de tus campos */ };
+    pago?: 'success' | 'pending' | 'failure' | null;
+    error?: string | null;
+}>().props;
+
+useEffect(() => {
+    try {
+        localStorage.removeItem('carrito');
+    } catch {
+        // ignorar
+    }
+}, []);
 
     return (
         <>

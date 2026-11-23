@@ -68,6 +68,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/pedidos/{pedido}/confirmacion', [CheckoutController::class, 'confirmacion'])
             ->name('pedidos.confirmacion');
         Route::get('/mi-cuenta', [CuentaController::class, 'index'])->name('mi-cuenta');
+        Route::post('/pedidos/{pedido}/pagar', [CheckoutController::class, 'pagar'])->name('pedidos.pagar');
     });
 
     // ---------------------------------------------------------------
