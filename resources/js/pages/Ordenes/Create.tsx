@@ -270,7 +270,7 @@ export default function Create({ proveedores, productos }: Props) {
                             {processing ? 'Guardando...' : 'Guardar Orden de Compra'}
                         </button>
                         <Button variant="outline" asChild>
-                            <Link href="/proveedores">Cancelar</Link>
+                            <Link href="/ordenes">Cancelar</Link>
                         </Button>
                     </div>
                 </form>

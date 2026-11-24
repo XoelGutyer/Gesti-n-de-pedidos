@@ -107,7 +107,7 @@ public function index(Request $request)
                 }
             });
             return redirect()
-                ->route('pedidos.index')
+                ->route('ordenes.index')
                 ->with('success', 'Orden creada exitosamente');
         }
         catch (\Exception $e) {
@@ -137,9 +137,17 @@ public function index(Request $request)
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(string $id)
+    public function edit(Orden $orden)
     {
-        //
+        $orden->load([
+            'proveedor',
+            'usuario:id,name',
+            'items.producto:id,nombre,stock',
+        ]);
+        //dd($orden);
+        return Inertia::render('Ordenes/Edit', [
+            'orden' => $orden,
+        ]);
     }
 
     /**
@@ -159,10 +167,17 @@ public function index(Request $request)
     }
 
     public function actualizarEstado(Request $request, Orden $orden){
-        
+        //dd($request);
         $validated = $request->validate([
-            'estado' => 'required|in:solicitado,recibido,cancelado',
+            'estado'             => 'required|in:solicitado,recibido,cancelado',
+            'items'              => 'required|array|min:1',
+            'items.*.id'         => 'required|exists:detalle_orden,id',
+            'items.*.producto_id'=> 'required|exists:productos,id',
+            'items.*.cantidad'   => 'required|integer|min:1',
+            'items.*.costo'      => 'required|numeric|min:0',
         ]);
+        //dd($validated);
+        //dd($request);
         $nuevoEstado = $validated['estado']; 
         $anteriorEstado = $orden->estado;
         
@@ -175,21 +190,37 @@ public function index(Request $request)
         }
         
         try{
-            DB::transaction(function () use ($orden, $nuevoEstado, $anteriorEstado) {
+            DB::transaction(function () use ($orden, $validated, $nuevoEstado, $anteriorEstado) {
+                $nuevoTotal = 0;
                 $orden->update(['estado' => $nuevoEstado]);
-
-                if($nuevoEstado === 'recibido'){
-                    foreach($orden->items as $item ){
-                        $producto = Producto::lockForUpdate()->find($item->producto_id);                    
-                        $producto->increment('stock', $item->cantidad);
-
-                        //$producto->update(['costo'=> $item->cost]);
-                    }
+                
+                foreach($validated['items'] as $itemData){
+                    $itemOrden = $orden->items()->where('id', $itemData['id'])->firstOrFail();
+                    $itemOrden->update([
+                        'cantidad' =>$itemData['cantidad'],
+                        'costo' => $itemData['costo'],
+                    ]);
+                    
+                    $nuevoTotal += $itemData['cantidad'] * $itemData['costo'];
+                    if($nuevoEstado === 'recibido'){
+                        $producto = Producto::lockForUpdate()->find($itemOrden->producto_id);                    
+                        $producto->increment('stock', $itemOrden->cantidad);
+                        $itemOrden->update([
+                            'costoProducto' =>$itemData['costo']
+                        ]);
+                        $producto->update([
+                            'costo'=> $itemData['costo']
+                        ]);   
+                    }   
                 }
+                $orden->update([
+                    'estado' => $nuevoEstado,
+                    'total' => $nuevoTotal
+                ]);
             });
             $mensaje = $nuevoEstado ==='recibido' ? 'Mercaderia marcada como recibida y stock actualizado'
             : 'Estado de la orden actualizado correctamente.';
-            return back()->with('success', $mensaje);
+            return redirect()->route('ordenes.index'); // back()->with('success', $mensaje);
         }
         catch(\Exception $e){
             return back()->with('error', 'Error al actualizar el estado ' . $e->getMessage());

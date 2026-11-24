@@ -28,6 +28,6 @@ class Orden extends Model
 
     public function items()
     {
-        return $this->hasMany(DetalleOrden::class, 'orden_id');
+        return $this->hasMany(DetalleOrden::class);
     }
 }
