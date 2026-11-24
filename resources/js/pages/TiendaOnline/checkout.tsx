@@ -7,6 +7,7 @@ type CartItem = {
         id: number;
         nombre: string;
         precio: number | string;
+        descuento: number | string;
         stock: number;
         imagen?: string | null;
     };
@@ -30,6 +31,16 @@ const formatPrice = (value: number | string) =>
         currency: 'ARS',
         maximumFractionDigits: 2,
     }).format(Number(value));
+
+const calcularPrecioFinal = (producto: CartItem['producto']) => {
+    const precio = Number(producto.precio);
+    const descuento = Math.min(
+        100,
+        Math.max(0, Number(producto.descuento ?? 0))
+    );
+
+    return precio * (1 - descuento / 100);
+};
 
 const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
@@ -63,9 +74,10 @@ export default function Checkout() {
     }, []);
 
     const total = cart.reduce(
-        (sum, i) => sum + Number(i.producto.precio) * i.cantidad,
-        0,
-    );
+    (sum, i) =>
+        sum + calcularPrecioFinal(i.producto) * i.cantidad,
+    0,
+);
 
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -302,12 +314,19 @@ useEffect(() => {
                                                 <span>
                                                     {cantidad} × {producto.nombre}
                                                 </span>
-                                                <span className="shrink-0">
-                                                    {formatPrice(
-                                                        Number(producto.precio) *
-                                                            cantidad,
-                                                    )}
-                                                </span>
+                                                <div className="shrink-0 text-right">
+    {Number(producto.descuento ?? 0) > 0 && (
+        <p className="text-xs text-gray-400 line-through">
+            {formatPrice(Number(producto.precio) * cantidad)}
+        </p>
+    )}
+
+    <p className="font-semibold text-emerald-600">
+        {formatPrice(
+            calcularPrecioFinal(producto) * cantidad
+        )}
+    </p>
+</div>
                                             </li>
                                         ))}
                                     </ul>

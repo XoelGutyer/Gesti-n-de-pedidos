@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use App\Models\Pedido;
 
 class CuentaController extends Controller
 {
@@ -41,4 +42,31 @@ return Inertia::render('TiendaOnline/mi-cuenta', [
     ],
 ]);
     }
+
+    public function pedido(Request $request, Pedido $pedido)
+{
+    $cliente = $request->user()->cliente; // AJUSTAR: relación User -> Cliente
+
+    // Seguridad: un cliente solo puede ver SUS pedidos
+    abort_unless($cliente && $pedido->cliente_id === $cliente->id, 404);
+
+    $pedido->load('items.producto'); // AJUSTAR: nombres de relaciones
+
+    return Inertia::render('TiendaOnline/mi-cuenta-pedidos', [
+        'pedido' => [
+            'id'     => $pedido->id,
+            'fecha'  => $pedido->fecha,
+            'total'  => $pedido->total,
+            'pagado' => (bool) $pedido->pagado,
+            'nota'   => $pedido->nota,
+            'items'  => $pedido->items->map(fn ($d) => [
+                'id'              => $d->id,
+                'producto'        => $d->producto->nombre ?? 'Producto eliminado', // AJUSTAR
+                'cantidad'        => $d->cantidad,
+                'precio_unitario' => $d->precioProducto,                          // AJUSTAR
+                'subtotal'        => $d->cantidad * $d->subtotal,                          // AJUSTAR
+            ]),
+        ],
+    ]);
+}
 }

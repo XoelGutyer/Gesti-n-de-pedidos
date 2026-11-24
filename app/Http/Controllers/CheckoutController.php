@@ -103,12 +103,23 @@ class CheckoutController extends Controller
 
             foreach ($cantidades as $id => $cantidad) {
                 $producto = $productos->get($id);
-                $subtotal = round($producto->precio * $cantidad, 2);
-                $total += $subtotal;
+                $precioOriginal = (float) $producto->precio;
+$descuento = (float) $producto->descuento;
+
+// Calculamos el precio final aplicando el descuento
+$precioFinal = round(
+    $precioOriginal * (1 - ($descuento / 100)),
+    2
+);
+
+$subtotal = round($precioFinal * $cantidad, 2);
+
+$total += $subtotal;
 
                 $lineas[] = [
                     'producto' => $producto,
                     'cantidad' => $cantidad,
+                    'precioFinal' => $precioFinal,
                     'subtotal' => $subtotal,
                 ];
             }
@@ -129,7 +140,7 @@ class CheckoutController extends Controller
                     'pedido_id' => $pedido->id,
                     'producto_id' => $linea['producto']->id,
                     'cantidad' => $linea['cantidad'],
-                    'precioProducto' => $linea['producto']->precio,
+                    'precioProducto' => $linea['precioFinal'],
                     'costoProducto' => $linea['producto']->costo,
                     'subtotal' => $linea['subtotal'],
                 ]);

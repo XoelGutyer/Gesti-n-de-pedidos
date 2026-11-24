@@ -11,7 +11,7 @@ type Pedido = {
 import { useState } from "react";
 
 type PageProps = {
-     cliente: {
+    cliente: {
         nombre: string;
         email: string;
         direccion: string;
@@ -37,35 +37,33 @@ const formatDate = (value: string) =>
 const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 export default function MiCuenta() {
+    const { cliente, pedidos, filtros } = usePage<PageProps>().props;
 
-const { cliente, pedidos, filtros } = usePage<PageProps>().props;
+    const [desde, setDesde] = useState(filtros.desde);
+    const [hasta, setHasta] = useState(filtros.hasta);
+    const hayFiltro = Boolean(filtros.desde || filtros.hasta);
 
-const [desde, setDesde] = useState(filtros.desde);
-const [hasta, setHasta] = useState(filtros.hasta);
-const hayFiltro = Boolean(filtros.desde || filtros.hasta);
+    const aplicar = (d: string, h: string) => {
+        const params: Record<string, string> = {};
+        if (d) params.desde = d;
+        if (h) params.hasta = h;
 
-const aplicar = (d: string, h: string) => {
-    const params: Record<string, string> = {};
-    if (d) params.desde = d;
-    if (h) params.hasta = h;
+        router.get("/mi-cuenta", params, {
+            preserveScroll: true,
+            replace: true,
+        });
+    };
 
-    router.get("/mi-cuenta", params, {
-        preserveScroll: true,
-        replace: true,
-    });
-};
+    const filtrar = (e: React.FormEvent) => {
+        e.preventDefault();
+        aplicar(desde, hasta);
+    };
 
-const filtrar = (e: React.FormEvent) => {
-    e.preventDefault();
-    aplicar(desde, hasta);
-};
-
-const limpiar = () => {
-    setDesde("");
-    setHasta("");
-    aplicar("", "");
-};
-
+    const limpiar = () => {
+        setDesde("");
+        setHasta("");
+        aplicar("", "");
+    };
 
     return (
         <>
@@ -153,45 +151,49 @@ const limpiar = () => {
                         </h2>
 
                         <form
-    onSubmit={filtrar}
-    className="mb-4 flex flex-wrap items-end gap-3 text-sm"
->
-    <div>
-        <label className="mb-1 block font-medium">Desde</label>
-        <input
-            type="date"
-            className={inputClass}
-            value={desde}
-            max={hasta || undefined}
-            onChange={(e) => setDesde(e.target.value)}
-        />
-    </div>
-    <div>
-        <label className="mb-1 block font-medium">Hasta</label>
-        <input
-            type="date"
-            className={inputClass}
-            value={hasta}
-            min={desde || undefined}
-            onChange={(e) => setHasta(e.target.value)}
-        />
-    </div>
-    <button
-        type="submit"
-        className="rounded-md bg-[#1b1b18] px-4 py-2 font-medium text-white dark:bg-[#eeeeec] dark:text-[#1C1C1A]"
-    >
-        Filtrar
-    </button>
-    {hayFiltro && (
-        <button
-            type="button"
-            onClick={limpiar}
-            className="px-2 py-2 text-[#706f6c] hover:underline dark:text-[#A1A09A]"
-        >
-            Limpiar
-        </button>
-    )}
-</form>
+                            onSubmit={filtrar}
+                            className="mb-4 flex flex-wrap items-end gap-3 text-sm"
+                        >
+                            <div>
+                                <label className="mb-1 block font-medium">
+                                    Desde
+                                </label>
+                                <input
+                                    type="date"
+                                    className={inputClass}
+                                    value={desde}
+                                    max={hasta || undefined}
+                                    onChange={(e) => setDesde(e.target.value)}
+                                />
+                            </div>
+                            <div>
+                                <label className="mb-1 block font-medium">
+                                    Hasta
+                                </label>
+                                <input
+                                    type="date"
+                                    className={inputClass}
+                                    value={hasta}
+                                    min={desde || undefined}
+                                    onChange={(e) => setHasta(e.target.value)}
+                                />
+                            </div>
+                            <button
+                                type="submit"
+                                className="rounded-md bg-[#1b1b18] px-4 py-2 font-medium text-white dark:bg-[#eeeeec] dark:text-[#1C1C1A]"
+                            >
+                                Filtrar
+                            </button>
+                            {hayFiltro && (
+                                <button
+                                    type="button"
+                                    onClick={limpiar}
+                                    className="px-2 py-2 text-[#706f6c] hover:underline dark:text-[#A1A09A]"
+                                >
+                                    Limpiar
+                                </button>
+                            )}
+                        </form>
 
                         {pedidos.length === 0 ? (
                             <div className="rounded-xl border border-dashed border-[#e5e5e0] p-10 text-center dark:border-[#3E3E3A]">
@@ -208,39 +210,41 @@ const limpiar = () => {
                         ) : (
                             <ul className="space-y-3">
                                 {pedidos.map((p) => (
-                                    <li
-                                        key={p.id}
-                                        className="flex items-center justify-between rounded-xl border border-[#e5e5e0] bg-white p-4 text-sm dark:border-[#3E3E3A] dark:bg-[#161615]"
-                                    >
-                                        <div>
-                                            <p className="font-medium">
-                                                Pedido #{p.id}
-                                            </p>
-                                            <p className="text-[#706f6c] dark:text-[#A1A09A]">
-                                                {formatDate(p.fecha)}
-                                            </p>
-                                            {p.nota && (
-                                                <p className="mt-1 text-xs text-[#706f6c] dark:text-[#A1A09A]">
-                                                    Nota: {p.nota}
+                                    <li key={p.id}>
+                                        <Link
+                                            href={`/mi-cuenta/pedidos/${p.id}`}
+                                            className="flex items-center justify-between rounded-xl border border-[#e5e5e0] bg-white p-4 text-sm transition hover:border-[#1b1b18] dark:border-[#3E3E3A] dark:bg-[#161615] dark:hover:border-[#eeeeec]"
+                                        >
+                                            <div>
+                                                <p className="font-medium">
+                                                    Pedido #{p.id}
                                                 </p>
-                                            )}
-                                        </div>
-                                        <div className="text-right">
-                                            <p className="font-medium">
-                                                {formatPrice(p.total)}
-                                            </p>
-                                            <p
-                                                className={
-                                                    p.pagado
-                                                        ? "text-green-600 dark:text-green-400"
-                                                        : "text-[#706f6c] dark:text-[#A1A09A]"
-                                                }
-                                            >
-                                                {p.pagado
-                                                    ? "Pagado"
-                                                    : "Pendiente de pago"}
-                                            </p>
-                                        </div>
+                                                <p className="text-[#706f6c] dark:text-[#A1A09A]">
+                                                    {formatDate(p.fecha)}
+                                                </p>
+                                                {p.nota && (
+                                                    <p className="mt-1 text-xs text-[#706f6c] dark:text-[#A1A09A]">
+                                                        Nota: {p.nota}
+                                                    </p>
+                                                )}
+                                            </div>
+                                            <div className="text-right">
+                                                <p className="font-medium">
+                                                    {formatPrice(p.total)}
+                                                </p>
+                                                <p
+                                                    className={
+                                                        p.pagado
+                                                            ? "text-green-600 dark:text-green-400"
+                                                            : "text-[#706f6c] dark:text-[#A1A09A]"
+                                                    }
+                                                >
+                                                    {p.pagado
+                                                        ? "Pagado"
+                                                        : "Pendiente de pago"}
+                                                </p>
+                                            </div>
+                                        </Link>
                                     </li>
                                 ))}
                             </ul>

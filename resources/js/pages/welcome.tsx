@@ -1,12 +1,13 @@
-import { Head, Link, usePage } from '@inertiajs/react';
-import { useEffect, useMemo, useState } from 'react';
-import { dashboard, login, register, checkout, miCuenta } from '@/routes';
-import { Auth } from '@/types';
+import { Head, Link, usePage } from "@inertiajs/react";
+import { useEffect, useMemo, useState } from "react";
+import { dashboard, login, register, checkout, miCuenta } from "@/routes";
+import { Auth } from "@/types";
 
 type Producto = {
     id: number;
     nombre: string;
     precio: number | string;
+    descuento: number | string;
     stock: number;
     imagen?: string | null; // URL pública de la imagen
 };
@@ -22,23 +23,33 @@ type PageProps = {
 };
 
 const formatPrice = (value: number | string) =>
-    new Intl.NumberFormat('es-AR', {
-        style: 'currency',
-        currency: 'ARS',
+    new Intl.NumberFormat("es-AR", {
+        style: "currency",
+        currency: "ARS",
         maximumFractionDigits: 2,
     }).format(Number(value));
+
+const calcularPrecioFinal = (producto: Producto) => {
+    const precio = Number(producto.precio);
+    const descuento = Math.min(
+        100,
+        Math.max(0, Number(producto.descuento ?? 0))
+    );
+
+    return precio * (1 - descuento / 100);
+};
 
 export default function Welcome() {
     const { auth, productos = [] } = usePage<PageProps>().props;
 
-    const [search, setSearch] = useState('');
+    const [search, setSearch] = useState("");
     const [cart, setCart] = useState<CartItem[]>([]);
     const [cartLoaded, setCartLoaded] = useState(false);
 
     // Recupera el carrito guardado (sobrevive a recargas y al paso por /checkout)
     useEffect(() => {
         try {
-            const saved = localStorage.getItem('carrito');
+            const saved = localStorage.getItem("carrito");
 
             if (saved) setCart(JSON.parse(saved));
         } catch {
@@ -51,7 +62,7 @@ export default function Welcome() {
         if (!cartLoaded) return;
 
         try {
-            localStorage.setItem('carrito', JSON.stringify(cart));
+            localStorage.setItem("carrito", JSON.stringify(cart));
         } catch {
             // ignorar
         }
@@ -61,14 +72,22 @@ export default function Welcome() {
     const filtered = useMemo(() => {
         const term = search.trim().toLowerCase();
 
-        return term === ''
+        return term === ""
             ? productos
             : productos.filter((p) => p.nombre.toLowerCase().includes(term));
     }, [productos, search]);
 
+const ofertas = useMemo(() => {
+    return productos.filter(
+        (producto) =>
+            Number(producto.descuento ?? 0) > 0 &&
+            producto.stock > 0
+    );
+}, [productos]);
+
     const cartCount = cart.reduce((sum, i) => sum + i.cantidad, 0);
     const cartTotal = cart.reduce(
-        (sum, i) => sum + Number(i.producto.precio) * i.cantidad,
+        (sum, i) => sum + calcularPrecioFinal(i.producto) * i.cantidad,
         0,
     );
 
@@ -113,9 +132,9 @@ export default function Welcome() {
         setCart((prev) => prev.filter((i) => i.producto.id !== id));
 
     const btnPrimary =
-        'rounded-md bg-[#1b1b18] px-4 py-2 text-sm font-medium text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-40 dark:bg-[#eeeeec] dark:text-[#1C1C1A] dark:hover:bg-white';
+        "rounded-md bg-[#1b1b18] px-4 py-2 text-sm font-medium text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-40 dark:bg-[#eeeeec] dark:text-[#1C1C1A] dark:hover:bg-white";
     const btnOutline =
-        'rounded-md border border-[#1b1b1835] px-4 py-2 text-sm font-medium transition hover:bg-[#f5f5f2] dark:border-[#3E3E3A] dark:hover:bg-[#161615]';
+        "rounded-md border border-[#1b1b1835] px-4 py-2 text-sm font-medium transition hover:bg-[#f5f5f2] dark:border-[#3E3E3A] dark:hover:bg-[#161615]";
 
     return (
         <>
@@ -154,22 +173,31 @@ export default function Welcome() {
                             </button>
 
                             {auth.user ? (
-    <Link
-        href={auth.user.role === 'admin' ? dashboard() : miCuenta()}
-        className={btnPrimary}
-    >
-        {auth.user.role === 'admin' ? 'Panel' : 'Mi cuenta'}
-    </Link>
-) : (
-    <>
-        <Link href={login()} className={btnOutline}>
-            Iniciar sesión
-        </Link>
-        <Link href={register()} className={`hidden sm:block ${btnPrimary}`}>
-            Registrarme
-        </Link>
-    </>
-)}
+                                <Link
+                                    href={
+                                        auth.user.role === "admin"
+                                            ? dashboard()
+                                            : miCuenta()
+                                    }
+                                    className={btnPrimary}
+                                >
+                                    {auth.user.role === "admin"
+                                        ? "Panel"
+                                        : "Mi cuenta"}
+                                </Link>
+                            ) : (
+                                <>
+                                    <Link href={login()} className={btnOutline}>
+                                        Iniciar sesión
+                                    </Link>
+                                    <Link
+                                        href={register()}
+                                        className={`hidden sm:block ${btnPrimary}`}
+                                    >
+                                        Registrarme
+                                    </Link>
+                                </>
+                            )}
                         </nav>
                     </div>
 
@@ -186,6 +214,75 @@ export default function Welcome() {
 
                 {/* Catálogo */}
                 <main className="mx-auto w-full max-w-7xl flex-1 px-6 py-8 lg:px-12">
+
+
+{/* Carrusel de ofertas */}
+{ofertas.length > 0 && (
+    <section className="mb-14">
+        <div className="mb-6">
+            <span className="text-sm font-bold uppercase tracking-widest text-red-500">
+                Ofertas especiales
+            </span>
+            <h2 className="mt-2 text-3xl font-extrabold">
+                🔥 Aprovechá nuestros descuentos
+            </h2>
+            <p className="mt-2 text-sm text-gray-500">
+                Encontrá tus productos favoritos a precios increíbles.
+            </p>
+        </div>
+
+        <div className="flex gap-5 overflow-x-auto snap-x snap-mandatory pb-5">
+            {ofertas.map((producto) => (
+                <article
+                    key={producto.id}
+                    className="group w-64 shrink-0 snap-start overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-xl dark:border-gray-700 dark:bg-[#161615]"
+                >
+                    <div className="relative aspect-square bg-gray-100 dark:bg-gray-800">
+                        {producto.imagen ? (
+                            <img
+                                src={producto.imagen}
+                                alt={producto.nombre}
+                                className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                            />
+                        ) : (
+                            <div className="flex h-full items-center justify-center text-6xl">
+                                📦
+                            </div>
+                        )}
+
+                        <span className="absolute left-3 top-3 rounded-full bg-red-500 px-3 py-1 text-sm font-bold text-white">
+                            -{Number(producto.descuento)}%
+                        </span>
+                    </div>
+
+                    <div className="p-4">
+                        <h3 className="truncate font-semibold">
+                            {producto.nombre}
+                        </h3>
+
+                        <p className="mt-2 text-sm text-gray-400 line-through">
+                            {formatPrice(producto.precio)}
+                        </p>
+
+                        <p className="text-2xl font-extrabold text-emerald-600">
+                            {formatPrice(calcularPrecioFinal(producto))}
+                        </p>
+
+                        <button
+                            type="button"
+                            onClick={() => addToCart(producto)}
+                            className="mt-4 w-full rounded-xl bg-indigo-950 px-4 py-3 font-semibold text-white transition hover:bg-indigo-800 dark:bg-indigo-600"
+                        >
+                            Agregar al carrito →
+                        </button>
+                    </div>
+                </article>
+            ))}
+        </div>
+    </section>
+)}
+
+
                     <h1 className="mb-6 text-2xl font-semibold">Productos</h1>
 
                     {filtered.length === 0 ? (
@@ -203,36 +300,52 @@ export default function Welcome() {
                                         className="flex flex-col overflow-hidden rounded-xl border border-[#e5e5e0] bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-md dark:border-[#3E3E3A] dark:bg-[#161615]"
                                     >
                                         <div className="relative aspect-square overflow-hidden bg-[#f3f3ef] dark:bg-[#252523]">
-    {producto.imagen ? (
-        <img
-            src={producto.imagen}
-            alt={producto.nombre}
-            loading="lazy"
-            className="absolute inset-0 h-full w-full object-cover"
-        />
-    ) : (
-        <span className="absolute inset-0 flex items-center justify-center text-5xl">
-            📦
-        </span>
-    )}
-</div>
+                                            {producto.imagen ? (
+                                                <img
+                                                    src={producto.imagen}
+                                                    alt={producto.nombre}
+                                                    loading="lazy"
+                                                    className="absolute inset-0 h-full w-full object-cover"
+                                                />
+                                            ) : (
+                                                <span className="absolute inset-0 flex items-center justify-center text-5xl">
+                                                    📦
+                                                </span>
+                                            )}
+                                        </div>
 
                                         <div className="flex flex-1 flex-col p-5">
                                             <h2 className="mb-1 text-base font-semibold">
                                                 {producto.nombre}
                                             </h2>
 
-                                            {!sinStock && producto.stock <= 5 && (
-                                                <p className="text-xs text-amber-600">
-                                                    ¡Últimas {producto.stock}{' '}
-                                                    unidades!
-                                                </p>
-                                            )}
+                                            {!sinStock &&
+                                                producto.stock <= 5 && (
+                                                    <p className="text-xs text-amber-600">
+                                                        ¡Últimas{" "}
+                                                        {producto.stock}{" "}
+                                                        unidades!
+                                                    </p>
+                                                )}
 
                                             <div className="mt-auto flex items-center justify-between gap-2 pt-4">
-                                                <span className="text-lg font-semibold">
-                                                    {formatPrice(producto.precio)}
-                                                </span>
+                                                <div className="flex flex-col">
+    {Number(producto.descuento) > 0 && (
+        <>
+            <span className="text-xs font-bold text-red-500">
+                -{Number(producto.descuento)}% OFF
+            </span>
+
+            <span className="text-sm text-gray-400 line-through">
+                {formatPrice(producto.precio)}
+            </span>
+        </>
+    )}
+
+    <span className="text-xl font-bold text-emerald-600">
+        {formatPrice(calcularPrecioFinal(producto))}
+    </span>
+</div>
 
                                                 <button
                                                     type="button"
@@ -243,8 +356,8 @@ export default function Welcome() {
                                                     className={btnPrimary}
                                                 >
                                                     {sinStock
-                                                        ? 'Sin stock'
-                                                        : 'Agregar'}
+                                                        ? "Sin stock"
+                                                        : "Agregar"}
                                                 </button>
                                             </div>
                                         </div>
@@ -297,8 +410,12 @@ export default function Welcome() {
                                                 <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-md bg-[#f3f3ef] dark:bg-[#252523]">
                                                     {producto.imagen ? (
                                                         <img
-                                                            src={producto.imagen}
-                                                            alt={producto.nombre}
+                                                            src={
+                                                                producto.imagen
+                                                            }
+                                                            alt={
+                                                                producto.nombre
+                                                            }
                                                             className="h-full w-full object-cover"
                                                         />
                                                     ) : (
@@ -310,11 +427,17 @@ export default function Welcome() {
                                                     <p className="text-sm font-medium">
                                                         {producto.nombre}
                                                     </p>
-                                                    <p className="text-sm text-[#706f6c] dark:text-[#A1A09A]">
-                                                        {formatPrice(
-                                                            producto.precio,
-                                                        )}
-                                                    </p>
+                                                    <div className="text-sm">
+    {Number(producto.descuento ?? 0) > 0 && (
+        <p className="text-xs text-gray-400 line-through">
+            {formatPrice(producto.precio)}
+        </p>
+    )}
+
+    <p className="font-semibold text-emerald-600">
+        {formatPrice(calcularPrecioFinal(producto))}
+    </p>
+</div>
 
                                                     <div className="mt-2 flex items-center gap-2">
                                                         <button
@@ -376,8 +499,8 @@ export default function Welcome() {
                                         className={`block w-full text-center ${btnPrimary}`}
                                     >
                                         {auth.user
-                                            ? 'Finalizar compra'
-                                            : 'Inicia sesión para comprar'}
+                                            ? "Finalizar compra"
+                                            : "Inicia sesión para comprar"}
                                     </Link>
                                 </div>
                             )}

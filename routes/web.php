@@ -28,16 +28,27 @@ Route::get('/', function () {
         'productos' => Producto::where('activo', true)
             ->where('stock', '>', 0)
             ->latest()
-            ->get(['id', 'nombre', 'precio', 'stock', 'imagen'])
+            ->get([
+                'id',
+                'nombre',
+                'precio',
+                'descuento',
+                'stock',
+                'imagen',
+            ])
             ->map(fn ($p) => [
                 'id' => $p->id,
                 'nombre' => $p->nombre,
                 'precio' => $p->precio,
+                'descuento' => $p->descuento,
                 'stock' => $p->stock,
-                'imagen' => $p->imagen ? asset('storage/'.$p->imagen) : null,
+                'imagen' => $p->imagen
+                    ? asset('storage/' . $p->imagen)
+                    : null,
             ]),
     ]);
 })->name('home');
+
 
 /*
 |--------------------------------------------------------------------------
@@ -69,6 +80,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->name('pedidos.confirmacion');
         Route::get('/mi-cuenta', [CuentaController::class, 'index'])->name('mi-cuenta');
         Route::post('/pedidos/{pedido}/pagar', [CheckoutController::class, 'pagar'])->name('pedidos.pagar');
+        Route::get('/mi-cuenta/pedidos/{pedido}', [CuentaController::class, 'pedido'])
+    ->name('mi-cuenta.pedido');
     });
 
     // ---------------------------------------------------------------
