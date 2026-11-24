@@ -51,7 +51,7 @@ export default function Show({ orden }: { orden: Orden }) {
         }
 
          router.patch(`/ordenes/${orden.id}/estado`, {
-             estado: newStatus,
+            estado: newStatus,
          });
     };
 
@@ -59,7 +59,7 @@ export default function Show({ orden }: { orden: Orden }) {
             <div className="mx-auto flex max-w-4xl flex-col gap-4 p-6">
 
                 <Button variant="ghost" size="sm" className="w-fit" asChild>
-                    <Link href="/pedidos">
+                    <Link href="/ordenes">
                         <ArrowLeft /> Volver a ordenes
                     </Link>
                 </Button>

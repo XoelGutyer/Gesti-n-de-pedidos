@@ -206,16 +206,19 @@ export default function Index({ ordenes, proveedores, filtros, flash }: Props) {
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="flex flex-wrap gap-2">
-                                                <Button size="sm" variant="outline" asChild>
-                                                    <Link href={`/ordenes/${o.id}`}>
-                                                        <Eye /> Ver detalle
-                                                    </Link>
-                                                </Button>
-                                                <Button size="sm" variant="outline" asChild>
-                                                    <Link href={`/ordenes/${o.id}/editar-items`}>
-                                                        <Pencil /> Editar ítems
-                                                    </Link>
-                                                </Button>
+                                                {o.estado === 'solicitado' ? (
+                                                    <Button size="sm" variant="outline" asChild>
+                                                        <Link href={`/ordenes/${o.id}/edit`}>
+                                                            <Pencil /> Recibir pedido
+                                                        </Link>
+                                                    </Button>
+                                                ) : (
+                                                    <Button size="sm" variant="outline" asChild>
+                                                        <Link href={`/ordenes/${o.id}`}>
+                                                            <Eye /> Ver detalle
+                                                        </Link>
+                                                    </Button>
+                                                )}
                                             </div>
                                         </td>
                                     </tr>
