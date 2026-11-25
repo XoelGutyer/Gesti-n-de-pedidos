@@ -23,14 +23,17 @@ export function NavFooter({
             className={`group-data-[collapsible=icon]:p-0 ${className || ""}`}
         >
             <SidebarGroupContent>
-                <SidebarMenu>
+                <SidebarMenu className="gap-1">
                     {items.map((item) => {
                         const href = toUrl(item.href);
                         const externo =
                             typeof href === "string" && href.startsWith("http");
+
                         const contenido = (
                             <>
-                                {item.icon && <item.icon className="h-5 w-5" />}
+                                {item.icon && (
+                                    <item.icon className="size-5" />
+                                )}
                                 <span>{item.title}</span>
                             </>
                         );
@@ -39,18 +42,25 @@ export function NavFooter({
                             <SidebarMenuItem key={item.title}>
                                 <SidebarMenuButton
                                     asChild
-                                    className="text-neutral-600 hover:text-neutral-800 dark:text-neutral-300 dark:hover:text-neutral-100"
+                                    tooltip={{ children: item.title }}
+                                    className="
+                                        rounded-lg transition-colors
+                                        text-slate-600
+                                        hover:bg-blue-50 hover:text-blue-700
+                                        dark:text-slate-300
+                                        dark:hover:bg-blue-950/50 dark:hover:text-blue-300
+                                    "
                                 >
                                     {externo ? (
                                         <a
-                                            href={toUrl(item.href)}
+                                            href={href}
                                             target="_blank"
                                             rel="noopener noreferrer"
                                         >
                                             {contenido}
                                         </a>
                                     ) : (
-                                        <Link href={toUrl(item.href)}>
+                                        <Link href={href}>
                                             {contenido}
                                         </Link>
                                     )}

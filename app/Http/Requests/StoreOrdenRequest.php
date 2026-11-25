@@ -39,7 +39,7 @@ class StoreOrdenRequest extends FormRequest
                     }
                 },
             ],
-            'items.*.cantidad'        => 'required|integer|min:2',
+            'items.*.cantidad'        => 'required|integer|min:1',
             'items.*.costoProducto'   => 'required|numeric|min:0',
         ];
     }

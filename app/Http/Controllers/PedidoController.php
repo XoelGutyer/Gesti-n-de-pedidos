@@ -58,44 +58,59 @@ public function index(Request $request)
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StorePedidoRequest $request)
-    {
-        DB::transaction(function () use ($request) {
-            $total = 0;
-            foreach ($request->items as $item) {
-                $producto = Producto::findOrFail($item['producto_id']);
-                $total += $producto->precio * $item['cantidad'];
-            }
-            $clientePorId = Cliente::where('id', $request->cliente_id)->first();
+   public function store(StorePedidoRequest $request)
+{
+    DB::transaction(function () use ($request) {
+        $clientePorId = Cliente::where('id', $request->cliente_id)->first();
 
-            $pedido = Pedido::create([
-                'fecha' => now()->toDateString(),
-                'nota' => '',
-                'cliente' => $clientePorId->nombre,
-                'direccion' => $clientePorId->direccion,
-                'total' => $total,
-                'cliente_id' => $request->cliente_id,
-                'usuario_id' => Auth::id(),
+        // Primero armamos los ítems con el descuento aplicado
+        $lineas = [];
+        $total = 0;
+
+        foreach ($request->items as $item) {
+            $producto = Producto::findOrFail($item['producto_id']);
+
+            $descuento = min(max((int) $producto->descuento, 0), 100);
+            $subtotal  = round($producto->precio * $item['cantidad'] * (1 - $descuento / 100), 2);
+            $total    += $subtotal;
+
+            $lineas[] = [
+                'producto'  => $producto,
+                'cantidad'  => $item['cantidad'],
+                'descuento' => $descuento,
+                'subtotal'  => $subtotal,
+            ];
+        }
+
+        $pedido = Pedido::create([
+            'fecha' => now()->toDateString(),
+            'nota' => '',
+            'cliente' => $clientePorId->nombre,
+            'direccion' => $clientePorId->direccion,
+            'total' => round($total, 2),
+            'cliente_id' => $request->cliente_id,
+            'usuario_id' => Auth::id(),
+        ]);
+
+        // Después guardamos cada ítem con su descuento
+        foreach ($lineas as $l) {
+            $pedido->items()->create([
+                'producto_id' => $l['producto']->id,
+                'cantidad' => $l['cantidad'],
+                'precioProducto' => $l['producto']->precio,
+                'descuento' => $l['descuento'],
+                'subtotal' => $l['subtotal'],
+                'pedido_id' => $pedido->id,
+                'costoProducto' => $l['producto']->costo,
             ]);
+            $l['producto']->decrement('stock', $l['cantidad']);
+        }
+    });
 
-            foreach ($request->items as $item) {
-                $producto = Producto::findOrFail($item['producto_id']);
-                $pedido->items()->create([
-                    'producto_id' => $producto->id,
-                    'cantidad' => $item['cantidad'],
-                    'precioProducto' => $producto->precio,
-                    'subtotal' => $item['cantidad'] * $producto->precio,
-                    'pedido_id' => $pedido->id,
-                    'costoProducto' => $producto->costo,
-                ]);
-                $producto->decrement('stock', $item['cantidad']);
-            }
-
-        });
-        return redirect()
-            ->route('pedidos.index')
-            ->with('success', 'Producto creado correctamente.');
-    }
+    return redirect()
+        ->route('pedidos.index')
+        ->with('success', 'Pedido creado correctamente.');
+}
 
 public function cambiarEstado(Request $request, Pedido $pedido)
 {

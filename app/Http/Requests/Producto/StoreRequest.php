@@ -24,10 +24,10 @@ class StoreRequest extends FormRequest
     {
         return [
             'nombre' => 'required|string|max:255',
-            'precio' => 'required|numeric',
-            'descuento' => 'nullable|numeric|between:0,100',
-            'costo'  => 'required|numeric',
-            'stock'  => 'required|integer',
+            'precio' => 'required|numeric|gt:0',
+'descuento' => 'nullable|numeric|between:0,100',
+'costo' => 'required|numeric|gt:0',
+'stock' => 'required|integer|min:0',
             'imagen'=>'nullable|mimes:jpeg,png,jpg|max:2048',
             'proveedor_id'=> 'required|exists:proveedores,id'
         ];

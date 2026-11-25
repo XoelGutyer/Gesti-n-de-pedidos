@@ -1,4 +1,6 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
+import { Search, ShieldCheck, Users, X } from 'lucide-react';
+import type { FormEvent } from 'react';
 
 type Role = 'admin' | 'preventista' | 'cliente';
 
@@ -29,13 +31,24 @@ type Props = {
     };
 };
 
-function RoleEditor({
-    userId,
-    role,
-}: {
-    userId: number;
-    role: Role;
-}) {
+const ROLES: Record<Role, { label: string; clase: string }> = {
+    admin: {
+        label: 'Administrador',
+        clase: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300',
+    },
+    preventista: {
+        label: 'Preventista',
+        clase: 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300',
+    },
+    cliente: {
+        label: 'Cliente',
+        clase: 'bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300',
+    },
+};
+
+const tarjeta = 'rounded-xl border border-blue-100 bg-white p-5 shadow-sm dark:border-blue-900/50 dark:bg-slate-900';
+
+function RoleEditor({ userId, role }: { userId: number; role: Role }) {
     const { data, setData, patch, processing, errors } = useForm<{
         role: Role;
     }>({
@@ -47,10 +60,8 @@ function RoleEditor({
             <div className="flex flex-wrap items-center gap-2">
                 <select
                     value={data.role}
-                    onChange={(event) =>
-                        setData('role', event.target.value as Role)
-                    }
-                    className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+                    onChange={(event) => setData('role', event.target.value as Role)}
+                    className="rounded-lg border border-blue-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 focus:outline-none dark:border-blue-900 dark:bg-slate-900 dark:text-white"
                 >
                     <option value="admin">Administrador</option>
                     <option value="preventista">Preventista</option>
@@ -65,24 +76,23 @@ function RoleEditor({
                             preserveScroll: true,
                         })
                     }
-                    className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-blue-500"
                 >
                     {processing ? 'Guardando...' : 'Guardar'}
                 </button>
             </div>
 
-            {errors.role && (
-                <p className="text-sm text-red-600">{errors.role}</p>
-            )}
+            {errors.role && <p className="text-sm text-red-600">{errors.role}</p>}
         </div>
     );
 }
+
 export default function UsuariosIndex({ users, filters }: Props) {
     const { data, setData } = useForm({
         buscar: filters.buscar ?? '',
     });
 
-    const buscarUsuarios = (event: React.FormEvent) => {
+    const buscarUsuarios = (event: FormEvent) => {
         event.preventDefault();
 
         router.get('/usuarios', data, {
@@ -96,136 +106,134 @@ export default function UsuariosIndex({ users, filters }: Props) {
         <>
             <Head title="Administración de usuarios" />
 
-            <div className="min-h-screen bg-gray-50 p-4 text-gray-900 sm:p-8 dark:bg-gray-950 dark:text-white">
+            <div className="p-6">
                 <div className="mx-auto max-w-7xl">
-                    <div className="mb-8">
-                        <h1 className="text-3xl font-bold">
-                            Administración de usuarios
-                        </h1>
-                        <p className="mt-2 text-gray-600 dark:text-gray-400">
-                            Consultá los usuarios registrados y administrá
-                            sus permisos.
-                        </p>
-                    </div>
-<form
-    onSubmit={buscarUsuarios}
-    className="mb-5 flex flex-col gap-3 sm:flex-row"
->
-    <input
-        type="text"
-        value={data.buscar}
-        onChange={(e) => setData('buscar', e.target.value)}
-        placeholder="Buscar por usuario o correo electrónico..."
-        className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
-    />
-
-    <button
-        type="submit"
-        className="rounded-xl bg-blue-600 px-6 py-3 text-sm font-medium text-white hover:bg-blue-700"
-    >
-        Buscar
-    </button>
-
-    {filters.buscar && (
-        <button
-            type="button"
-            onClick={() => {
-                setData('buscar', '');
-                router.get('/usuarios', {}, {
-                    preserveState: true,
-                    preserveScroll: true,
-                });
-            }}
-            className="rounded-xl border border-gray-300 px-6 py-3 text-sm font-medium hover:bg-gray-100 dark:border-gray-700 dark:hover:bg-gray-800"
-        >
-            Limpiar
-        </button>
-    )}
-</form>
-                    <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-3">
-                        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
-                            <p className="text-sm text-gray-500">
-                                Usuarios registrados
-                            </p>
-                            <p className="mt-1 text-3xl font-bold">
-                                {users.total}
+                    {/* Encabezado */}
+                    <div className="mb-6 flex items-center gap-3">
+                        <div className="flex size-10 items-center justify-center rounded-xl bg-blue-600 text-white shadow-sm">
+                            <ShieldCheck className="size-5" />
+                        </div>
+                        <div>
+                            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
+                                Administración de usuarios
+                            </h1>
+                            <p className="text-sm text-blue-700/70 dark:text-blue-300/70">
+                                Consultá los usuarios registrados y administrá sus permisos.
                             </p>
                         </div>
+                    </div>
 
-                        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
-                            <p className="text-sm text-gray-500">
-                                Página actual
+                    {/* Buscador */}
+                    <form
+                        onSubmit={buscarUsuarios}
+                        className="mb-5 flex flex-col gap-3 rounded-xl border border-blue-100 bg-blue-50/60 p-4 sm:flex-row dark:border-blue-900/50 dark:bg-blue-950/30"
+                    >
+                        <div className="relative w-full">
+                            <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-blue-400" />
+                            <input
+                                type="text"
+                                value={data.buscar}
+                                onChange={(e) => setData('buscar', e.target.value)}
+                                placeholder="Buscar por usuario o correo electrónico..."
+                                className="w-full rounded-lg border border-blue-200 bg-white py-2.5 pr-4 pl-9 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 dark:border-blue-900 dark:bg-slate-900 dark:text-white"
+                            />
+                        </div>
+
+                        <button
+                            type="submit"
+                            className="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 dark:hover:bg-blue-500"
+                        >
+                            <Search className="size-4" />
+                            Buscar
+                        </button>
+
+                        {filters.buscar && (
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setData('buscar', '');
+                                    router.get(
+                                        '/usuarios',
+                                        {},
+                                        {
+                                            preserveState: true,
+                                            preserveScroll: true,
+                                        },
+                                    );
+                                }}
+                                className="inline-flex items-center justify-center gap-2 rounded-lg border border-blue-200 px-6 py-2.5 text-sm font-medium text-blue-700 transition hover:bg-blue-50 dark:border-blue-800 dark:text-blue-300 dark:hover:bg-blue-950"
+                            >
+                                <X className="size-4" />
+                                Limpiar
+                            </button>
+                        )}
+                    </form>
+
+                    {/* Indicadores */}
+                    <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-3">
+                        <div className="rounded-xl border border-blue-600 bg-gradient-to-br from-blue-700 to-blue-500 p-5 text-white shadow-md dark:border-blue-700">
+                            <p className="flex items-center gap-2 text-sm text-blue-100">
+                                <Users className="size-4" />
+                                Usuarios registrados
                             </p>
-                            <p className="mt-1 text-3xl font-bold">
+                            <p className="mt-1 text-3xl font-bold tabular-nums">{users.total}</p>
+                        </div>
+
+                        <div className={tarjeta}>
+                            <p className="text-sm text-slate-500 dark:text-slate-400">Página actual</p>
+                            <p className="mt-1 text-3xl font-bold text-blue-950 tabular-nums dark:text-white">
                                 {users.current_page} de {users.last_page}
                             </p>
                         </div>
 
-                        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
-                            <p className="text-sm text-gray-500">
-                                Registros por página
-                            </p>
-                            <p className="mt-1 text-3xl font-bold">15</p>
+                        <div className={tarjeta}>
+                            <p className="text-sm text-slate-500 dark:text-slate-400">Registros por página</p>
+                            <p className="mt-1 text-3xl font-bold text-blue-950 tabular-nums dark:text-white">15</p>
                         </div>
                     </div>
 
-                    <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
+                    {/* Tabla */}
+                    <div className="overflow-hidden rounded-xl border border-blue-100 bg-white shadow-sm dark:border-blue-900/50 dark:bg-slate-900">
                         <div className="overflow-x-auto">
                             <table className="w-full text-left text-sm">
-                                <thead className="bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300">
+                                <thead className="bg-blue-600 text-white dark:bg-blue-900/70">
                                     <tr>
-                                        <th className="px-5 py-4">ID</th>
-                                        <th className="px-5 py-4">Usuario</th>
-                                        <th className="px-5 py-4">Correo</th>
-                                        <th className="px-5 py-4">Rol actual</th>
-                                        <th className="min-w-72 px-5 py-4">
-                                            Cambiar rol
-                                        </th>
+                                        <th className="px-5 py-4 font-semibold">ID</th>
+                                        <th className="px-5 py-4 font-semibold">Usuario</th>
+                                        <th className="px-5 py-4 font-semibold">Correo</th>
+                                        <th className="px-5 py-4 font-semibold">Rol actual</th>
+                                        <th className="min-w-72 px-5 py-4 font-semibold">Cambiar rol</th>
                                     </tr>
                                 </thead>
 
-                                <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
+                                <tbody className="divide-y divide-blue-50 dark:divide-slate-800">
                                     {users.data.map((user) => (
                                         <tr
                                             key={user.id}
-                                            className="hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                                            className="transition-colors hover:bg-blue-50/70 dark:hover:bg-blue-950/40"
                                         >
-                                            <td className="px-5 py-4">
-                                                {user.id}
+                                            <td className="px-5 py-4 font-semibold text-blue-700 dark:text-blue-300">
+                                                #{user.id}
                                             </td>
 
-                                            <td className="px-5 py-4 font-medium">
+                                            <td className="px-5 py-4 font-medium text-slate-900 dark:text-slate-100">
                                                 {user.name}
                                             </td>
 
-                                            <td className="px-5 py-4 text-gray-600 dark:text-gray-300">
+                                            <td className="px-5 py-4 text-slate-600 dark:text-slate-300">
                                                 {user.email}
                                             </td>
 
                                             <td className="px-5 py-4">
                                                 <span
-                                                    className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
-                                                        user.role === 'admin'
-                                                            ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300'
-                                                            : user.role === 'preventista'
-                                                              ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300'
-                                                              : 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300'
-                                                    }`}
+                                                    className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${ROLES[user.role].clase}`}
                                                 >
-                                                    {user.role === 'admin'
-                                                        ? 'Administrador'
-                                                        : user.role ===
-                                                            'preventista'
-                                                          ? 'Preventista'
-                                                          : 'Cliente'}
+                                                    {ROLES[user.role].label}
                                                 </span>
                                             </td>
 
                                             <td className="px-5 py-4">
-                                                <RoleEditor
-                                                    userId={user.id}
-                                                    role={user.role}
-                                                />
+                                                <RoleEditor userId={user.id} role={user.role} />
                                             </td>
                                         </tr>
                                     ))}
@@ -234,8 +242,9 @@ export default function UsuariosIndex({ users, filters }: Props) {
                                         <tr>
                                             <td
                                                 colSpan={5}
-                                                className="px-5 py-10 text-center text-gray-500"
+                                                className="px-5 py-12 text-center text-slate-500 dark:text-slate-400"
                                             >
+                                                <Users className="mx-auto mb-2 size-8 text-blue-300 dark:text-blue-800" />
                                                 No hay usuarios registrados.
                                             </td>
                                         </tr>
@@ -244,8 +253,9 @@ export default function UsuariosIndex({ users, filters }: Props) {
                             </table>
                         </div>
 
-                        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-gray-200 px-5 py-4 dark:border-gray-800">
-                            <p className="text-sm text-gray-500">
+                        {/* Paginación */}
+                        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-blue-100 bg-blue-50/60 px-5 py-4 dark:border-blue-900/50 dark:bg-blue-950/30">
+                            <p className="text-sm text-slate-500 dark:text-slate-400">
                                 Página {users.current_page} de {users.last_page}
                             </p>
 
@@ -256,10 +266,10 @@ export default function UsuariosIndex({ users, filters }: Props) {
                                             <Link
                                                 href={link.url}
                                                 preserveScroll
-                                                className={`inline-flex rounded-lg px-3 py-2 text-sm ${
+                                                className={`inline-flex rounded-lg px-3 py-2 text-sm transition ${
                                                     link.active
-                                                        ? 'bg-blue-600 text-white'
-                                                        : 'border border-gray-200 hover:bg-gray-100 dark:border-gray-700 dark:hover:bg-gray-800'
+                                                        ? 'bg-blue-600 font-semibold text-white shadow-sm'
+                                                        : 'border border-blue-200 text-blue-700 hover:bg-blue-50 dark:border-blue-800 dark:text-blue-300 dark:hover:bg-blue-950'
                                                 }`}
                                                 dangerouslySetInnerHTML={{
                                                     __html: link.label,
@@ -267,7 +277,7 @@ export default function UsuariosIndex({ users, filters }: Props) {
                                             />
                                         ) : (
                                             <span
-                                                className="inline-flex cursor-not-allowed rounded-lg px-3 py-2 text-sm text-gray-400"
+                                                className="inline-flex cursor-not-allowed rounded-lg px-3 py-2 text-sm text-slate-400"
                                                 dangerouslySetInnerHTML={{
                                                     __html: link.label,
                                                 }}

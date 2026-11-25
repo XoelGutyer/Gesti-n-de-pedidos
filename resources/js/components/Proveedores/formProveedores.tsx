@@ -50,7 +50,6 @@ export default function ProveedorForm({ proveedor }: Props) {
                 },
             });
         } else {
-            //si No esta editando entonces esta creando y se redirge a /proveedores con el metdo post
             router.post('/proveedores', data, {
                 onError: (errors) => {
                     setErrors(errors);
@@ -62,14 +61,26 @@ export default function ProveedorForm({ proveedor }: Props) {
         }
     };
 
+    const inputClass = `
+        w-full rounded-lg border border-blue-200
+        bg-white px-3 py-2.5 text-sm text-slate-900
+        outline-none transition-colors
+        placeholder:text-slate-400
+        focus:border-blue-500 focus:ring-2 focus:ring-blue-100
+        dark:border-blue-900/70 dark:bg-slate-950
+        dark:text-white dark:placeholder:text-slate-500
+        dark:focus:border-blue-500 dark:focus:ring-blue-950
+    `;
+
+    const labelClass =
+        'mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-200';
+
     return (
         <form onSubmit={submit} className="space-y-6">
+
             {/* Nombre */}
             <div>
-                <label
-                    htmlFor="nombre"
-                    className="mb-2 block text-sm font-medium"
-                >
+                <label htmlFor="nombre" className={labelClass}>
                     Nombre
                 </label>
 
@@ -78,7 +89,7 @@ export default function ProveedorForm({ proveedor }: Props) {
                     type="text"
                     value={nombre}
                     onChange={(e) => setNombre(e.target.value)}
-                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                    className={inputClass}
                     placeholder="Nombre del proveedor"
                 />
 
@@ -91,10 +102,7 @@ export default function ProveedorForm({ proveedor }: Props) {
 
             {/* Email */}
             <div>
-                <label
-                    htmlFor="email"
-                    className="mb-2 block text-sm font-medium"
-                >
+                <label htmlFor="email" className={labelClass}>
                     Email
                 </label>
 
@@ -103,7 +111,7 @@ export default function ProveedorForm({ proveedor }: Props) {
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                    className={inputClass}
                     placeholder="proveedor@email.com"
                 />
 
@@ -116,10 +124,7 @@ export default function ProveedorForm({ proveedor }: Props) {
 
             {/* Teléfono */}
             <div>
-                <label
-                    htmlFor="telefono"
-                    className="mb-2 block text-sm font-medium"
-                >
+                <label htmlFor="telefono" className={labelClass}>
                     Teléfono
                 </label>
 
@@ -128,7 +133,7 @@ export default function ProveedorForm({ proveedor }: Props) {
                     type="text"
                     value={telefono}
                     onChange={(e) => setTelefono(e.target.value)}
-                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                    className={inputClass}
                     placeholder="387 123 4567"
                 />
 
@@ -139,16 +144,32 @@ export default function ProveedorForm({ proveedor }: Props) {
                 )}
             </div>
 
-            <div className="flex justify-end gap-3">
+            {/* Botones */}
+            <div className="flex justify-end gap-3 border-t border-blue-100 pt-5 dark:border-blue-900/50">
                 <Button
                     type="button"
                     variant="outline"
                     onClick={() => router.visit('/proveedores')}
+                    className="
+                        border-blue-200 text-blue-700
+                        hover:bg-blue-50 hover:text-blue-800
+                        dark:border-blue-900 dark:text-blue-300
+                        dark:hover:bg-blue-950
+                    "
                 >
                     Cancelar
                 </Button>
 
-                <Button type="submit" disabled={procesando}>
+                <Button
+                    type="submit"
+                    disabled={procesando}
+                    className="
+                        bg-blue-600 text-white
+                        hover:bg-blue-700
+                        disabled:cursor-not-allowed disabled:opacity-60
+                        dark:bg-blue-600 dark:hover:bg-blue-700
+                    "
+                >
                     {procesando
                         ? 'Guardando...'
                         : editando
@@ -159,4 +180,3 @@ export default function ProveedorForm({ proveedor }: Props) {
         </form>
     );
 }
-

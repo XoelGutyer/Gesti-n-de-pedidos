@@ -1,4 +1,15 @@
 import { Head, Link, usePage } from "@inertiajs/react";
+import {
+    Flame,
+    Minus,
+    Package,
+    Plus,
+    Search,
+    ShoppingBag,
+    ShoppingCart,
+    Trash2,
+    X,
+} from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { dashboard, login, register, checkout, miCuenta } from "@/routes";
 import { Auth } from "@/types";
@@ -29,15 +40,25 @@ const formatPrice = (value: number | string) =>
         maximumFractionDigits: 2,
     }).format(Number(value));
 
-const calcularPrecioFinal = (producto: Producto) => {
-    const precio = Number(producto.precio);
-    const descuento = Math.min(
-        100,
-        Math.max(0, Number(producto.descuento ?? 0))
-    );
+const descuentoDe = (producto: Producto) =>
+    Math.min(100, Math.max(0, Number(producto.descuento ?? 0)));
 
-    return precio * (1 - descuento / 100);
-};
+const calcularPrecioFinal = (producto: Producto) =>
+    Number(producto.precio) * (1 - descuentoDe(producto) / 100);
+
+// Se redondea por línea, igual que hace el servidor
+const subtotalLinea = (producto: Producto, cantidad: number) =>
+    Math.round(calcularPrecioFinal(producto) * cantidad * 100) / 100;
+
+// Estilos reutilizables (paleta azul)
+const btnPrimary =
+    "inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-40 dark:hover:bg-blue-500";
+const btnHeaderSolid =
+    "inline-flex items-center rounded-lg bg-white px-4 py-2 text-sm font-semibold text-blue-700 shadow-sm transition hover:bg-blue-50";
+const btnHeaderOutline =
+    "relative inline-flex items-center gap-2 rounded-lg border border-white/40 px-4 py-2 text-sm font-medium text-white transition hover:bg-white/15";
+const inputBusqueda =
+    "w-full rounded-lg border border-transparent bg-white py-2 pl-10 pr-4 text-sm text-slate-900 shadow-sm outline-none placeholder:text-slate-400 focus:ring-2 focus:ring-sky-300";
 
 export default function Welcome() {
     const { auth, productos = [] } = usePage<PageProps>().props;
@@ -67,6 +88,7 @@ export default function Welcome() {
             // ignorar
         }
     }, [cart, cartLoaded]);
+
     const [cartOpen, setCartOpen] = useState(false);
 
     const filtered = useMemo(() => {
@@ -77,17 +99,16 @@ export default function Welcome() {
             : productos.filter((p) => p.nombre.toLowerCase().includes(term));
     }, [productos, search]);
 
-const ofertas = useMemo(() => {
-    return productos.filter(
-        (producto) =>
-            Number(producto.descuento ?? 0) > 0 &&
-            producto.stock > 0
-    );
-}, [productos]);
+    const ofertas = useMemo(() => {
+        return productos.filter(
+            (producto) =>
+                Number(producto.descuento ?? 0) > 0 && producto.stock > 0,
+        );
+    }, [productos]);
 
     const cartCount = cart.reduce((sum, i) => sum + i.cantidad, 0);
     const cartTotal = cart.reduce(
-        (sum, i) => sum + calcularPrecioFinal(i.producto) * i.cantidad,
+        (sum, i) => sum + subtotalLinea(i.producto, i.cantidad),
         0,
     );
 
@@ -131,30 +152,30 @@ const ofertas = useMemo(() => {
     const removeFromCart = (id: number) =>
         setCart((prev) => prev.filter((i) => i.producto.id !== id));
 
-    const btnPrimary =
-        "rounded-md bg-[#1b1b18] px-4 py-2 text-sm font-medium text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-40 dark:bg-[#eeeeec] dark:text-[#1C1C1A] dark:hover:bg-white";
-    const btnOutline =
-        "rounded-md border border-[#1b1b1835] px-4 py-2 text-sm font-medium transition hover:bg-[#f5f5f2] dark:border-[#3E3E3A] dark:hover:bg-[#161615]";
-
     return (
         <>
             <Head title="Tienda online" />
 
-            <div className="flex min-h-screen flex-col bg-[#FDFDFC] text-[#1b1b18] dark:bg-[#0a0a0a] dark:text-[#EDEDEC]">
+            <div className="flex min-h-screen flex-col bg-gradient-to-b from-blue-50 via-white to-white text-slate-900 dark:from-slate-950 dark:via-slate-950 dark:to-slate-950 dark:text-slate-100">
                 {/* Header */}
-                <header className="sticky top-0 z-30 border-b border-[#e5e5e0] bg-[#FDFDFC]/90 backdrop-blur dark:border-[#3E3E3A] dark:bg-[#0a0a0a]/90">
+                <header className="sticky top-0 z-30 bg-gradient-to-r from-blue-700 to-blue-500 text-white shadow-md">
                     <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-4 px-6 py-4 lg:px-12">
-                        <Link href="/" className="text-lg font-semibold">
-                            🛍️ Tienda online
+                        <Link
+                            href="/"
+                            className="flex items-center gap-2 text-lg font-bold"
+                        >
+                            <ShoppingBag className="size-5" />
+                            Tienda online
                         </Link>
 
-                        <div className="hidden flex-1 md:block md:max-w-md">
+                        <div className="relative hidden flex-1 md:block md:max-w-md">
+                            <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
                             <input
                                 type="search"
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
                                 placeholder="Buscar productos..."
-                                className="w-full rounded-md border border-[#1b1b1835] bg-white px-4 py-2 text-sm outline-none focus:border-[#1b1b18] dark:border-[#3E3E3A] dark:bg-[#161615] dark:focus:border-[#eeeeec]"
+                                className={inputBusqueda}
                             />
                         </div>
 
@@ -162,11 +183,12 @@ const ofertas = useMemo(() => {
                             <button
                                 type="button"
                                 onClick={() => setCartOpen(true)}
-                                className={`relative ${btnOutline}`}
+                                className={btnHeaderOutline}
                             >
-                                🛒 Carrito
+                                <ShoppingCart className="size-4" />
+                                Carrito
                                 {cartCount > 0 && (
-                                    <span className="absolute -top-2 -right-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#1b1b18] px-1 text-xs text-white dark:bg-[#eeeeec] dark:text-[#1C1C1A]">
+                                    <span className="absolute -right-2 -top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-white px-1 text-xs font-bold text-blue-700 ring-2 ring-blue-600">
                                         {cartCount}
                                     </span>
                                 )}
@@ -179,7 +201,7 @@ const ofertas = useMemo(() => {
                                             ? dashboard()
                                             : miCuenta()
                                     }
-                                    className={btnPrimary}
+                                    className={btnHeaderSolid}
                                 >
                                     {auth.user.role === "admin"
                                         ? "Panel"
@@ -187,12 +209,15 @@ const ofertas = useMemo(() => {
                                 </Link>
                             ) : (
                                 <>
-                                    <Link href={login()} className={btnOutline}>
+                                    <Link
+                                        href={login()}
+                                        className={btnHeaderOutline}
+                                    >
                                         Iniciar sesión
                                     </Link>
                                     <Link
                                         href={register()}
-                                        className={`hidden sm:block ${btnPrimary}`}
+                                        className={`hidden sm:inline-flex ${btnHeaderSolid}`}
                                     >
                                         Registrarme
                                     </Link>
@@ -201,151 +226,185 @@ const ofertas = useMemo(() => {
                         </nav>
                     </div>
 
-                    <div className="px-6 pb-4 md:hidden">
+                    <div className="relative px-6 pb-4 md:hidden">
+                        <Search className="absolute left-9 top-1/2 size-4 -translate-y-[70%] text-slate-400" />
                         <input
                             type="search"
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                             placeholder="Buscar productos..."
-                            className="w-full rounded-md border border-[#1b1b1835] bg-white px-4 py-2 text-sm outline-none dark:border-[#3E3E3A] dark:bg-[#161615]"
+                            className={inputBusqueda}
                         />
                     </div>
                 </header>
 
-                {/* Catálogo */}
                 <main className="mx-auto w-full max-w-7xl flex-1 px-6 py-8 lg:px-12">
+                    {/* Portada */}
+                    <section className="mb-10 overflow-hidden rounded-3xl bg-gradient-to-r from-blue-700 via-blue-600 to-sky-500 p-8 text-white shadow-lg sm:p-10">
+                        <h1 className="text-3xl font-extrabold sm:text-4xl">
+                            Tu tienda online
+                        </h1>
+                        <p className="mt-2 max-w-xl text-blue-100">
+                            Elegí tus productos, armá tu carrito y pagá de forma
+                            segura con Mercado Pago.
+                        </p>
+                    </section>
 
-
-{/* Carrusel de ofertas */}
-{ofertas.length > 0 && (
-    <section className="mb-14">
-        <div className="mb-6">
-            <span className="text-sm font-bold uppercase tracking-widest text-red-500">
-                Ofertas especiales
-            </span>
-            <h2 className="mt-2 text-3xl font-extrabold">
-                🔥 Aprovechá nuestros descuentos
-            </h2>
-            <p className="mt-2 text-sm text-gray-500">
-                Encontrá tus productos favoritos a precios increíbles.
-            </p>
-        </div>
-
-        <div className="flex gap-5 overflow-x-auto snap-x snap-mandatory pb-5">
-            {ofertas.map((producto) => (
-                <article
-                    key={producto.id}
-                    className="group w-64 shrink-0 snap-start overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-xl dark:border-gray-700 dark:bg-[#161615]"
-                >
-                    <div className="relative aspect-square bg-gray-100 dark:bg-gray-800">
-                        {producto.imagen ? (
-                            <img
-                                src={producto.imagen}
-                                alt={producto.nombre}
-                                className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-                            />
-                        ) : (
-                            <div className="flex h-full items-center justify-center text-6xl">
-                                📦
+                    {/* Carrusel de ofertas */}
+                    {ofertas.length > 0 && (
+                        <section className="mb-12 rounded-3xl border border-blue-100 bg-blue-50/70 p-6 dark:border-blue-900/50 dark:bg-blue-950/30">
+                            <div className="mb-6 flex items-center gap-3">
+                                <span className="flex size-10 items-center justify-center rounded-xl bg-blue-600 text-white shadow-sm">
+                                    <Flame className="size-5" />
+                                </span>
+                                <div>
+                                    <h2 className="text-2xl font-extrabold text-blue-950 dark:text-white">
+                                        Ofertas especiales
+                                    </h2>
+                                    <p className="text-sm text-slate-500 dark:text-slate-400">
+                                        Aprovechá nuestros descuentos en
+                                        productos seleccionados.
+                                    </p>
+                                </div>
                             </div>
-                        )}
 
-                        <span className="absolute left-3 top-3 rounded-full bg-red-500 px-3 py-1 text-sm font-bold text-white">
-                            -{Number(producto.descuento)}%
-                        </span>
-                    </div>
+                            <div className="flex snap-x snap-mandatory gap-5 overflow-x-auto pb-4">
+                                {ofertas.map((producto) => (
+                                    <article
+                                        key={producto.id}
+                                        className="group w-64 shrink-0 snap-start overflow-hidden rounded-2xl border border-blue-100 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-xl hover:shadow-blue-600/10 dark:border-blue-900/50 dark:bg-slate-900"
+                                    >
+                                        <div className="relative aspect-square bg-blue-50 dark:bg-slate-800">
+                                            {producto.imagen ? (
+                                                <img
+                                                    src={producto.imagen}
+                                                    alt={producto.nombre}
+                                                    className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                                                />
+                                            ) : (
+                                                <div className="flex h-full items-center justify-center text-blue-200 dark:text-blue-900">
+                                                    <Package className="size-16" />
+                                                </div>
+                                            )}
 
-                    <div className="p-4">
-                        <h3 className="truncate font-semibold">
-                            {producto.nombre}
-                        </h3>
+                                            <span className="absolute left-3 top-3 rounded-full bg-blue-600 px-3 py-1 text-sm font-bold text-white shadow">
+                                                -{descuentoDe(producto)}%
+                                            </span>
+                                        </div>
 
-                        <p className="mt-2 text-sm text-gray-400 line-through">
-                            {formatPrice(producto.precio)}
-                        </p>
+                                        <div className="p-4">
+                                            <h3 className="truncate font-semibold text-slate-800 dark:text-slate-100">
+                                                {producto.nombre}
+                                            </h3>
 
-                        <p className="text-2xl font-extrabold text-emerald-600">
-                            {formatPrice(calcularPrecioFinal(producto))}
-                        </p>
+                                            <p className="mt-2 text-sm text-slate-400 line-through">
+                                                {formatPrice(producto.precio)}
+                                            </p>
 
-                        <button
-                            type="button"
-                            onClick={() => addToCart(producto)}
-                            className="mt-4 w-full rounded-xl bg-indigo-950 px-4 py-3 font-semibold text-white transition hover:bg-indigo-800 dark:bg-indigo-600"
-                        >
-                            Agregar al carrito →
-                        </button>
-                    </div>
-                </article>
-            ))}
-        </div>
-    </section>
-)}
+                                            <p className="text-2xl font-extrabold text-blue-700 dark:text-blue-300">
+                                                {formatPrice(
+                                                    calcularPrecioFinal(
+                                                        producto,
+                                                    ),
+                                                )}
+                                            </p>
 
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    addToCart(producto)
+                                                }
+                                                className={`mt-4 w-full py-2.5 ${btnPrimary}`}
+                                            >
+                                                <ShoppingCart className="size-4" />
+                                                Agregar al carrito
+                                            </button>
+                                        </div>
+                                    </article>
+                                ))}
+                            </div>
+                        </section>
+                    )}
 
-                    <h1 className="mb-6 text-2xl font-semibold">Productos</h1>
+                    <h2 className="mb-6 text-2xl font-bold text-blue-950 dark:text-white">
+                        Productos
+                    </h2>
 
                     {filtered.length === 0 ? (
-                        <div className="rounded-xl border border-dashed border-[#e5e5e0] p-12 text-center text-[#706f6c] dark:border-[#3E3E3A] dark:text-[#A1A09A]">
+                        <div className="rounded-2xl border border-dashed border-blue-200 bg-white p-12 text-center text-slate-500 dark:border-blue-900 dark:bg-slate-900 dark:text-slate-400">
+                            <Search className="mx-auto mb-3 size-8 text-blue-300 dark:text-blue-800" />
                             No se encontraron productos.
                         </div>
                     ) : (
                         <section className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                             {filtered.map((producto) => {
                                 const sinStock = producto.stock <= 0;
+                                const desc = descuentoDe(producto);
 
                                 return (
                                     <article
                                         key={producto.id}
-                                        className="flex flex-col overflow-hidden rounded-xl border border-[#e5e5e0] bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-md dark:border-[#3E3E3A] dark:bg-[#161615]"
+                                        className="flex flex-col overflow-hidden rounded-2xl border border-blue-100 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg hover:shadow-blue-600/10 dark:border-blue-900/50 dark:bg-slate-900"
                                     >
-                                        <div className="relative aspect-square overflow-hidden bg-[#f3f3ef] dark:bg-[#252523]">
+                                        <div className="relative aspect-square overflow-hidden bg-blue-50 dark:bg-slate-800">
                                             {producto.imagen ? (
                                                 <img
                                                     src={producto.imagen}
                                                     alt={producto.nombre}
                                                     loading="lazy"
-                                                    className="absolute inset-0 h-full w-full object-cover"
+                                                    className={`absolute inset-0 h-full w-full object-cover ${sinStock ? "opacity-50 grayscale" : ""}`}
                                                 />
                                             ) : (
-                                                <span className="absolute inset-0 flex items-center justify-center text-5xl">
-                                                    📦
+                                                <span className="absolute inset-0 flex items-center justify-center text-blue-200 dark:text-blue-900">
+                                                    <Package className="size-14" />
+                                                </span>
+                                            )}
+
+                                            {desc > 0 && !sinStock && (
+                                                <span className="absolute left-3 top-3 rounded-full bg-blue-600 px-2.5 py-1 text-xs font-bold text-white shadow">
+                                                    -{desc}%
+                                                </span>
+                                            )}
+
+                                            {sinStock && (
+                                                <span className="absolute left-3 top-3 rounded-full bg-slate-700 px-2.5 py-1 text-xs font-bold text-white shadow">
+                                                    Sin stock
                                                 </span>
                                             )}
                                         </div>
 
                                         <div className="flex flex-1 flex-col p-5">
-                                            <h2 className="mb-1 text-base font-semibold">
+                                            <h3 className="mb-1 text-base font-semibold text-slate-800 dark:text-slate-100">
                                                 {producto.nombre}
-                                            </h2>
+                                            </h3>
 
                                             {!sinStock &&
                                                 producto.stock <= 5 && (
-                                                    <p className="text-xs text-amber-600">
+                                                    <p className="text-xs font-medium text-sky-600 dark:text-sky-400">
                                                         ¡Últimas{" "}
                                                         {producto.stock}{" "}
                                                         unidades!
                                                     </p>
                                                 )}
 
-                                            <div className="mt-auto flex items-center justify-between gap-2 pt-4">
+                                            <div className="mt-auto flex items-end justify-between gap-2 pt-4">
                                                 <div className="flex flex-col">
-    {Number(producto.descuento) > 0 && (
-        <>
-            <span className="text-xs font-bold text-red-500">
-                -{Number(producto.descuento)}% OFF
-            </span>
+                                                    {desc > 0 && (
+                                                        <span className="text-sm text-slate-400 line-through">
+                                                            {formatPrice(
+                                                                producto.precio,
+                                                            )}
+                                                        </span>
+                                                    )}
 
-            <span className="text-sm text-gray-400 line-through">
-                {formatPrice(producto.precio)}
-            </span>
-        </>
-    )}
-
-    <span className="text-xl font-bold text-emerald-600">
-        {formatPrice(calcularPrecioFinal(producto))}
-    </span>
-</div>
+                                                    <span className="text-xl font-bold text-blue-700 dark:text-blue-300">
+                                                        {formatPrice(
+                                                            calcularPrecioFinal(
+                                                                producto,
+                                                            ),
+                                                        )}
+                                                    </span>
+                                                </div>
 
                                                 <button
                                                     type="button"
@@ -368,7 +427,7 @@ const ofertas = useMemo(() => {
                     )}
                 </main>
 
-                <footer className="border-t border-[#e5e5e0] px-6 py-6 text-center text-xs text-[#706f6c] dark:border-[#3E3E3A] dark:text-[#A1A09A]">
+                <footer className="border-t border-blue-100 bg-white px-6 py-6 text-center text-xs text-slate-500 dark:border-blue-900/50 dark:bg-slate-950 dark:text-slate-400">
                     Tienda online · Todos los derechos reservados
                 </footer>
 
@@ -376,131 +435,157 @@ const ofertas = useMemo(() => {
                 {cartOpen && (
                     <div className="fixed inset-0 z-40 flex justify-end">
                         <div
-                            className="absolute inset-0 bg-black/40"
+                            className="absolute inset-0 bg-blue-950/50 backdrop-blur-sm"
                             onClick={() => setCartOpen(false)}
                         />
 
-                        <aside className="relative flex h-full w-full max-w-md flex-col bg-[#FDFDFC] shadow-xl dark:bg-[#0a0a0a]">
-                            <div className="flex items-center justify-between border-b border-[#e5e5e0] px-6 py-4 dark:border-[#3E3E3A]">
-                                <h2 className="text-lg font-semibold">
+                        <aside className="relative flex h-full w-full max-w-md flex-col bg-white shadow-2xl dark:bg-slate-950">
+                            <div className="flex items-center justify-between bg-gradient-to-r from-blue-700 to-blue-500 px-6 py-4 text-white">
+                                <h2 className="flex items-center gap-2 text-lg font-semibold">
+                                    <ShoppingCart className="size-5" />
                                     Tu carrito
                                 </h2>
                                 <button
                                     type="button"
                                     onClick={() => setCartOpen(false)}
-                                    className="rounded-md px-2 py-1 text-xl hover:bg-[#f5f5f2] dark:hover:bg-[#161615]"
+                                    className="rounded-md p-1 transition hover:bg-white/15"
                                     aria-label="Cerrar carrito"
                                 >
-                                    ✕
+                                    <X className="size-5" />
                                 </button>
                             </div>
 
                             <div className="flex-1 overflow-y-auto px-6 py-4">
                                 {cart.length === 0 ? (
-                                    <p className="py-12 text-center text-[#706f6c] dark:text-[#A1A09A]">
+                                    <div className="py-16 text-center text-slate-500 dark:text-slate-400">
+                                        <ShoppingCart className="mx-auto mb-3 size-10 text-blue-200 dark:text-blue-900" />
                                         Tu carrito está vacío.
-                                    </p>
+                                    </div>
                                 ) : (
-                                    <ul className="space-y-4">
-                                        {cart.map(({ producto, cantidad }) => (
-                                            <li
-                                                key={producto.id}
-                                                className="flex gap-3"
-                                            >
-                                                <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-md bg-[#f3f3ef] dark:bg-[#252523]">
-                                                    {producto.imagen ? (
-                                                        <img
-                                                            src={
-                                                                producto.imagen
-                                                            }
-                                                            alt={
-                                                                producto.nombre
-                                                            }
-                                                            className="h-full w-full object-cover"
-                                                        />
-                                                    ) : (
-                                                        <span>📦</span>
-                                                    )}
-                                                </div>
+                                    <ul className="divide-y divide-blue-50 dark:divide-slate-800">
+                                        {cart.map(({ producto, cantidad }) => {
+                                            const desc = descuentoDe(producto);
 
-                                                <div className="flex-1">
-                                                    <p className="text-sm font-medium">
-                                                        {producto.nombre}
-                                                    </p>
-                                                    <div className="text-sm">
-    {Number(producto.descuento ?? 0) > 0 && (
-        <p className="text-xs text-gray-400 line-through">
-            {formatPrice(producto.precio)}
-        </p>
-    )}
-
-    <p className="font-semibold text-emerald-600">
-        {formatPrice(calcularPrecioFinal(producto))}
-    </p>
-</div>
-
-                                                    <div className="mt-2 flex items-center gap-2">
-                                                        <button
-                                                            type="button"
-                                                            onClick={() =>
-                                                                changeQuantity(
-                                                                    producto.id,
-                                                                    -1,
-                                                                )
-                                                            }
-                                                            className="h-7 w-7 rounded border border-[#1b1b1835] text-sm dark:border-[#3E3E3A]"
-                                                        >
-                                                            −
-                                                        </button>
-                                                        <span className="w-6 text-center text-sm">
-                                                            {cantidad}
-                                                        </span>
-                                                        <button
-                                                            type="button"
-                                                            onClick={() =>
-                                                                changeQuantity(
-                                                                    producto.id,
-                                                                    1,
-                                                                )
-                                                            }
-                                                            className="h-7 w-7 rounded border border-[#1b1b1835] text-sm dark:border-[#3E3E3A]"
-                                                        >
-                                                            +
-                                                        </button>
-                                                        <button
-                                                            type="button"
-                                                            onClick={() =>
-                                                                removeFromCart(
-                                                                    producto.id,
-                                                                )
-                                                            }
-                                                            className="ml-auto text-xs text-red-600 hover:underline"
-                                                        >
-                                                            Quitar
-                                                        </button>
+                                            return (
+                                                <li
+                                                    key={producto.id}
+                                                    className="flex gap-3 py-4 first:pt-0"
+                                                >
+                                                    <div className="flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-blue-50 text-blue-300 dark:bg-slate-800 dark:text-blue-900">
+                                                        {producto.imagen ? (
+                                                            <img
+                                                                src={
+                                                                    producto.imagen
+                                                                }
+                                                                alt={
+                                                                    producto.nombre
+                                                                }
+                                                                className="h-full w-full object-cover"
+                                                            />
+                                                        ) : (
+                                                            <Package className="size-6" />
+                                                        )}
                                                     </div>
-                                                </div>
-                                            </li>
-                                        ))}
+
+                                                    <div className="flex-1">
+                                                        <div className="flex items-start justify-between gap-2">
+                                                            <p className="text-sm font-medium text-slate-800 dark:text-slate-100">
+                                                                {
+                                                                    producto.nombre
+                                                                }
+                                                            </p>
+                                                            {desc > 0 && (
+                                                                <span className="shrink-0 rounded-full bg-sky-100 px-2 py-0.5 text-xs font-semibold text-sky-700 dark:bg-sky-950 dark:text-sky-300">
+                                                                    -{desc}%
+                                                                </span>
+                                                            )}
+                                                        </div>
+
+                                                        <div className="text-sm">
+                                                            {desc > 0 && (
+                                                                <p className="text-xs text-slate-400 line-through">
+                                                                    {formatPrice(
+                                                                        producto.precio,
+                                                                    )}
+                                                                </p>
+                                                            )}
+
+                                                            <p className="font-semibold text-blue-700 dark:text-blue-300">
+                                                                {formatPrice(
+                                                                    calcularPrecioFinal(
+                                                                        producto,
+                                                                    ),
+                                                                )}
+                                                            </p>
+                                                        </div>
+
+                                                        <div className="mt-2 flex items-center gap-2">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() =>
+                                                                    changeQuantity(
+                                                                        producto.id,
+                                                                        -1,
+                                                                    )
+                                                                }
+                                                                className="flex size-7 items-center justify-center rounded-md border border-blue-200 text-blue-700 transition hover:bg-blue-50 dark:border-blue-800 dark:text-blue-300 dark:hover:bg-blue-950"
+                                                                aria-label="Quitar una unidad"
+                                                            >
+                                                                <Minus className="size-3.5" />
+                                                            </button>
+                                                            <span className="w-6 text-center text-sm font-medium tabular-nums">
+                                                                {cantidad}
+                                                            </span>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() =>
+                                                                    changeQuantity(
+                                                                        producto.id,
+                                                                        1,
+                                                                    )
+                                                                }
+                                                                className="flex size-7 items-center justify-center rounded-md border border-blue-200 text-blue-700 transition hover:bg-blue-50 dark:border-blue-800 dark:text-blue-300 dark:hover:bg-blue-950"
+                                                                aria-label="Agregar una unidad"
+                                                            >
+                                                                <Plus className="size-3.5" />
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() =>
+                                                                    removeFromCart(
+                                                                        producto.id,
+                                                                    )
+                                                                }
+                                                                className="ml-auto flex items-center gap-1 text-xs text-slate-500 transition hover:text-red-600 dark:text-slate-400"
+                                                            >
+                                                                <Trash2 className="size-3.5" />
+                                                                Quitar
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </li>
+                                            );
+                                        })}
                                     </ul>
                                 )}
                             </div>
 
                             {cart.length > 0 && (
-                                <div className="border-t border-[#e5e5e0] px-6 py-4 dark:border-[#3E3E3A]">
-                                    <div className="mb-4 flex items-center justify-between text-base font-semibold">
+                                <div className="border-t border-blue-100 bg-blue-50/60 px-6 py-5 dark:border-blue-900/50 dark:bg-blue-950/30">
+                                    <div className="mb-4 flex items-baseline justify-between text-lg font-bold text-blue-950 dark:text-white">
                                         <span>Total</span>
-                                        <span>{formatPrice(cartTotal)}</span>
+                                        <span className="tabular-nums">
+                                            {formatPrice(cartTotal)}
+                                        </span>
                                     </div>
 
-                                    {/* TODO: reemplazar por la ruta real de checkout */}
                                     <Link
                                         href={auth.user ? checkout() : login()}
-                                        className={`block w-full text-center ${btnPrimary}`}
+                                        className={`w-full py-3 ${btnPrimary}`}
                                     >
                                         {auth.user
                                             ? "Finalizar compra"
-                                            : "Inicia sesión para comprar"}
+                                            : "Iniciá sesión para comprar"}
                                     </Link>
                                 </div>
                             )}

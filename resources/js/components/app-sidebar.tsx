@@ -1,9 +1,21 @@
-import { Link, usePage } from '@inertiajs/react';
-import { BookOpen, FolderGit2, LayoutGrid, Package, Trash2, Truck, Users, User, Scroll } from 'lucide-react';
-import AppLogo from '@/components/app-logo';
-import { NavFooter } from '@/components/nav-footer';
-import { NavMain } from '@/components/nav-main';
-import { NavUser } from '@/components/nav-user';
+import { Link, usePage } from "@inertiajs/react";
+import {
+    BookOpen,
+    FolderGit2,
+    LayoutGrid,
+    Package,
+    Trash2,
+    Truck,
+    Users,
+    User,
+    Scroll,
+} from "lucide-react";
+
+import AppLogo from "@/components/app-logo";
+import { NavFooter } from "@/components/nav-footer";
+import { NavMain } from "@/components/nav-main";
+import { NavUser } from "@/components/nav-user";
+
 import {
     Sidebar,
     SidebarContent,
@@ -12,10 +24,11 @@ import {
     SidebarMenu,
     SidebarMenuButton,
     SidebarMenuItem,
-} from '@/components/ui/sidebar';
-import { dashboard } from '@/routes';
-import type { NavItem } from '@/types';
-import type { Auth, UserRole } from '@/types/auth';
+} from "@/components/ui/sidebar";
+
+import { dashboard } from "@/routes";
+import type { NavItem } from "@/types";
+import type { Auth, UserRole } from "@/types/auth";
 
 type InertiaSharedProps = {
     auth: Auth;
@@ -23,107 +36,111 @@ type InertiaSharedProps = {
 };
 
 const mainNavItems: NavItem[] = [
-    
     {
-        title: 'Dashboard',
+        title: "Dashboard",
         href: dashboard(),
         icon: LayoutGrid,
-        roles: ['admin', 'preventista'],
+        roles: ["admin", "preventista"],
     },
-    //aca agrego los items del menu lateral
     {
-        title: 'Proveedores',
-        href: '/proveedores',
+        title: "Proveedores",
+        href: "/proveedores",
         icon: Truck,
-        roles: ['admin','preventista'],
+        roles: ["admin", "preventista"],
     },
-
     {
-    title: 'Productos',
-    href: '/productos',
-    icon: Package,
-    roles: ['admin', 'preventista'],
+        title: "Productos",
+        href: "/productos",
+        icon: Package,
+        roles: ["admin", "preventista"],
     },
-
     {
-    title: 'Usuarios',
-    href: '/usuarios',
-    icon: Users,
-    roles: ['admin','preventista'],
+        title: "Usuarios",
+        href: "/usuarios",
+        icon: Users,
+        roles: ["admin", "preventista"],
     },
-    
     {
-    title: 'Clientes',
-    href: '/clientes',
-    icon: User,
-    roles: ['admin', 'preventista'],
+        title: "Clientes",
+        href: "/clientes",
+        icon: User,
+        roles: ["admin", "preventista"],
     },
-
     {
-    title: 'Pedidos',
-    href: '/pedidos',
-    icon: Scroll,
-    roles: ['admin', 'preventista', 'cliente'],
+        title: "Pedidos",
+        href: "/pedidos",
+        icon: Scroll,
+        roles: ["admin", "preventista", "cliente"],
     },
-
     {
-    title: 'Ventas por proveedor',
-    href: '/reportes/ventas-proveedores',
-    icon: Truck, 
-    roles: ['admin'],
+        title: "Ventas por proveedor",
+        href: "/reportes/ventas-proveedores",
+        icon: Truck,
+        roles: ["admin"],
     },
-
     {
-    title: 'Ordenes',
-    href: '/ordenes',
-    icon: Scroll,
-    roles: ['admin'],
+        title: "Ordenes",
+        href: "/ordenes",
+        icon: Scroll,
+        roles: ["admin"],
     },
 ];
 
 const footerNavItems: NavItem[] = [
     {
-        title: 'Papelera',
-        href: '/papelera',
+        title: "Papelera",
+        href: "/papelera",
         icon: Trash2,
     },
     {
-        title: 'Repository',
-        href: 'https://github.com/laravel/react-starter-kit',
+        title: "Repository",
+        href: "https://github.com/laravel/react-starter-kit",
         icon: FolderGit2,
     },
     {
-        title: 'Documentation',
-        href: 'https://laravel.com/docs/starter-kits#react',
+        title: "Documentation",
+        href: "https://laravel.com/docs/starter-kits#react",
         icon: BookOpen,
     },
 ];
 
 export function AppSidebar() {
+    const { props } = usePage<InertiaSharedProps>();
 
-    const { props, url } = usePage<InertiaSharedProps>();
-    const currentRole: UserRole | undefined = props.auth.user?.role as UserRole | undefined;
-    
+    const currentRole: UserRole | undefined =
+        props.auth.user?.role as UserRole | undefined;
+
     const canSeeItem = (item: NavItem): boolean => {
         if (!item.roles || item.roles.length === 0) {
             return true;
         }
 
-        return Boolean(currentRole && item.roles.includes(currentRole));
+        return Boolean(
+            currentRole && item.roles.includes(currentRole),
+        );
     };
 
     const visibleItems = mainNavItems.filter(canSeeItem);
 
-    const isActiveRoute = (href: string): boolean => {
-        const targetPath = new URL(href, window.location.origin).pathname;
-        return url === targetPath || url.startsWith(`${targetPath}/`);
-    };
     return (
-        <Sidebar collapsible="icon" variant="inset">
-            <SidebarHeader>
+        <Sidebar
+            collapsible="icon"
+            variant="inset"
+            className="
+                border-r border-blue-100
+                bg-blue-50
+                dark:border-blue-900/50
+                dark:bg-slate-900
+            "
+        >
+            <SidebarHeader className="border-b border-blue-200 bg-blue-100 px-3 py-4 dark:border-blue-900/50 dark:bg-slate-900">
                 <SidebarMenu>
                     <SidebarMenuItem>
-                        <SidebarMenuButton size="lg" asChild>
+                        <SidebarMenuButton
+                            size="lg"
+                            asChild
+                            className="rounded-xl transition-colors hover:bg-blue-100 dark:hover:bg-blue-950/50"
+                        >
                             <Link href={dashboard()} prefetch>
                                 <AppLogo />
                             </Link>
@@ -132,12 +149,16 @@ export function AppSidebar() {
                 </SidebarMenu>
             </SidebarHeader>
 
-            <SidebarContent>
+            <SidebarContent className="bg-blue-100 px-2 py-4 dark:bg-slate-900">
                 <NavMain items={visibleItems} />
             </SidebarContent>
 
-            <SidebarFooter>
-                <NavFooter items={footerNavItems} className="mt-auto" />
+            <SidebarFooter className="border-t border-blue-200 bg-blue-100 px-2 py-3 dark:border-blue-900/50 dark:bg-slate-900">
+                <NavFooter
+                    items={footerNavItems}
+                    className="mt-auto"
+                />
+
                 <NavUser />
             </SidebarFooter>
         </Sidebar>

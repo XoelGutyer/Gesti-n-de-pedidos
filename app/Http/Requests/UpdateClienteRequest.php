@@ -25,7 +25,7 @@ class UpdateClienteRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'nombre' => 'required|string|max:255',
+            'nombre' => ['required', 'string', 'max:255', 'regex:/^[\pL\s]+$/u'],
             'direccion' => 'required|string|max:255',
             'email' => 'required|email|max:255',
             'dia' => [

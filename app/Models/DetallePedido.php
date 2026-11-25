@@ -12,6 +12,7 @@ class DetallePedido extends Model
     protected $fillable = [
         'cantidad',
         'precioProducto',
+        'descuento',
         'costoProducto',
         'subtotal',
         'producto_id',

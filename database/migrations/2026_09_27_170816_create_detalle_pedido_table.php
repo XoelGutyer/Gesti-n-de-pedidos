@@ -16,6 +16,7 @@ return new class extends Migration
 
             $table->unsignedInteger('cantidad')->default(0);
             $table->decimal('precioProducto',10,2);
+            $table->unsignedTinyInteger('descuento')->default(0);
             $table->decimal('costoProducto',10,2);
             $table->decimal('subtotal',10,2);
             

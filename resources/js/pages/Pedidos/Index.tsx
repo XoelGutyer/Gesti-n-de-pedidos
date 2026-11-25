@@ -7,6 +7,7 @@ import {
     ChevronsUpDown,
     Eye,
     FileText,
+    Package,
     Pencil,
     Plus,
     Search,
@@ -25,11 +26,19 @@ import {
     CommandItem,
     CommandList,
 } from "@/components/ui/command";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 
 interface DetallePedido {
     id: number;
     cantidad: number;
     precioProducto: number;
+    descuento: number;
     costoProducto: number;
     subtotal: number;
     producto_id: number;
@@ -38,13 +47,15 @@ interface DetallePedido {
     };
 }
 
+type Estado = "pendiente" | "en_preparacion" | "en_camino" | "entregado";
+
 interface Pedido {
     id: number;
     formato_fecha: string;
     nota: string;
     total: number;
     pagado: boolean;
-    estado: "pendiente" | "en_preparacion" | "en_camino" | "entregado";
+    estado: Estado;
     cliente: {
         nombre: string;
     };
@@ -61,20 +72,28 @@ interface Props {
     filtros: { desde?: string; hasta?: string; cliente_id?: string };
     flash?: { success?: string };
 }
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
-import UsuariosIndex from "../Usuarios";
 
-const ESTADOS = [
-    { value: "pendiente", label: "Pendiente" },
-    { value: "en_preparacion", label: "En preparación" },
-    { value: "en_camino", label: "En camino" },
-    { value: "entregado", label: "Entregado" },
+const ESTADOS: { value: Estado; label: string; clase: string }[] = [
+    {
+        value: "pendiente",
+        label: "Pendiente",
+        clase: "bg-slate-100 text-slate-700 ring-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:ring-slate-600",
+    },
+    {
+        value: "en_preparacion",
+        label: "En preparación",
+        clase: "bg-sky-100 text-sky-700 ring-sky-300 dark:bg-sky-950 dark:text-sky-300 dark:ring-sky-800",
+    },
+    {
+        value: "en_camino",
+        label: "En camino",
+        clase: "bg-blue-100 text-blue-700 ring-blue-300 dark:bg-blue-950 dark:text-blue-300 dark:ring-blue-800",
+    },
+    {
+        value: "entregado",
+        label: "Entregado",
+        clase: "bg-indigo-100 text-indigo-700 ring-indigo-300 dark:bg-indigo-950 dark:text-indigo-300 dark:ring-indigo-800",
+    },
 ];
 
 const cambiarEstado = (pedido: Pedido, estado: string) => {
@@ -85,8 +104,26 @@ const cambiarEstado = (pedido: Pedido, estado: string) => {
     );
 };
 
-export default function Index({ pedidos, usuario, clientes, filtros, flash }: Props) {
+// Estilos reutilizables (paleta azul)
+const inputFecha =
+    "h-9 rounded-md border border-blue-200 bg-white px-3 text-sm text-slate-900 " +
+    "focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 " +
+    "dark:border-blue-900 dark:bg-slate-900 dark:text-white dark:[color-scheme:dark]";
 
+const botonPrimario =
+    "bg-blue-600 text-white shadow-sm hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500";
+
+const botonContorno =
+    "border-blue-200 text-blue-700 hover:bg-blue-50 hover:text-blue-800 " +
+    "dark:border-blue-800 dark:bg-transparent dark:text-blue-300 dark:hover:bg-blue-950 dark:hover:text-blue-200";
+
+export default function Index({
+    pedidos,
+    usuario,
+    clientes,
+    filtros,
+    flash,
+}: Props) {
     const [desde, setDesde] = useState(filtros.desde ?? "");
     const [hasta, setHasta] = useState(filtros.hasta ?? "");
     const [clienteId, setClienteId] = useState(filtros.cliente_id ?? "todos");
@@ -114,6 +151,7 @@ export default function Index({ pedidos, usuario, clientes, filtros, flash }: Pr
         setClienteId("todos");
         router.get("/pedidos", {}, { preserveState: true });
     };
+
     const [seleccion, setSeleccion] = useState<number[]>([]);
     const todos = pedidos.length > 0 && seleccion.length === pedidos.length;
 
@@ -140,28 +178,40 @@ export default function Index({ pedidos, usuario, clientes, filtros, flash }: Pr
         );
     };
 
+    const esAdmin = usuario.role === "admin";
+
     return (
         <div className="p-6">
             <Head title="Pedidos" />
-            <div className="mb-6 flex items-center justify-between gap-2">
-                {usuario.role === 'admin' ? (
-                    <h1 className="text-2xl font-bold text-white">Pedidos</h1>
-                ) : (
-                    <h1 className="text-2xl font-bold text-white">Mis Pedidos</h1>
-                )}
 
+            {/* Encabezado */}
+            <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                    <div className="flex size-10 items-center justify-center rounded-xl bg-blue-600 text-white shadow-sm">
+                        <Package className="size-5" />
+                    </div>
+                    <div>
+                        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
+                            {esAdmin ? "Pedidos" : "Mis pedidos"}
+                        </h1>
+                        <p className="text-sm text-blue-700/70 dark:text-blue-300/70">
+                            {pedidos.length} pedido(s)
+                        </p>
+                    </div>
+                </div>
 
                 <div className="flex items-center gap-2">
                     {seleccion.length > 0 && (
                         <Button
                             variant="outline"
+                            className={botonContorno}
                             onClick={() => abrirRemitos(seleccion)}
                         >
                             <FileText />
                             Crear remitos ({seleccion.length})
                         </Button>
                     )}
-                    <Button asChild>
+                    <Button asChild className={botonPrimario}>
                         <Link href="/pedidos/create">
                             <Plus />
                             Nuevo pedido
@@ -172,44 +222,51 @@ export default function Index({ pedidos, usuario, clientes, filtros, flash }: Pr
 
             {flash?.success && (
                 <div
-                    className="relative mb-4 rounded border border-green-400 bg-green-100 px-4 py-3 text-green-700"
+                    className="mb-4 rounded-lg border border-emerald-300 bg-emerald-50 px-4 py-3 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300"
                     role="alert"
                 >
                     <span className="block sm:inline">{flash.success}</span>
                 </div>
             )}
 
-            <div className="mb-4 flex flex-wrap items-end gap-3">
+            {/* Filtros */}
+            <div className="mb-4 flex flex-wrap items-end gap-3 rounded-xl border border-blue-100 bg-blue-50/60 p-4 dark:border-blue-900/50 dark:bg-blue-950/30">
                 <div className="flex flex-col gap-1">
-                    <label className="text-xs text-gray-400">Desde</label>
+                    <label className="text-xs font-medium text-blue-800 dark:text-blue-300">
+                        Desde
+                    </label>
                     <input
                         type="date"
                         value={desde}
                         onChange={(e) => setDesde(e.target.value)}
-                        className="h-9 rounded-md border border-gray-300 bg-white px-3 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+                        className={inputFecha}
                     />
                 </div>
 
                 <div className="flex flex-col gap-1">
-                    <label className="text-xs text-gray-400">Hasta</label>
+                    <label className="text-xs font-medium text-blue-800 dark:text-blue-300">
+                        Hasta
+                    </label>
                     <input
                         type="date"
                         value={hasta}
                         onChange={(e) => setHasta(e.target.value)}
-                        className="h-9 rounded-md border border-gray-300 bg-white px-3 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+                        className={inputFecha}
                     />
                 </div>
 
-                {usuario.role === 'admin' && (
+                {esAdmin && (
                     <div className="flex flex-col gap-1">
-                        <label className="text-xs text-gray-400">Cliente</label>
+                        <label className="text-xs font-medium text-blue-800 dark:text-blue-300">
+                            Cliente
+                        </label>
                         <Popover open={abierto} onOpenChange={setAbierto}>
                             <PopoverTrigger asChild>
                                 <Button
                                     variant="outline"
                                     role="combobox"
                                     aria-expanded={abierto}
-                                    className="h-9 w-[240px] justify-between font-normal"
+                                    className={`h-9 w-[240px] justify-between font-normal ${botonContorno}`}
                                 >
                                     <span className="truncate">
                                         {clienteSeleccionado?.nombre ??
@@ -219,7 +276,7 @@ export default function Index({ pedidos, usuario, clientes, filtros, flash }: Pr
                                 </Button>
                             </PopoverTrigger>
                             <PopoverContent
-                                className="w-[300px] p-0"
+                                className="w-[300px] border-blue-200 p-0 dark:border-blue-900"
                                 align="start"
                             >
                                 <Command>
@@ -252,8 +309,8 @@ export default function Index({ pedidos, usuario, clientes, filtros, flash }: Pr
                                                     <Check
                                                         className={
                                                             clienteId ===
-                                                                String(c.id)
-                                                                ? "opacity-100"
+                                                            String(c.id)
+                                                                ? "text-blue-600 opacity-100"
                                                                 : "opacity-0"
                                                         }
                                                     />
@@ -262,7 +319,7 @@ export default function Index({ pedidos, usuario, clientes, filtros, flash }: Pr
                                                             {c.nombre}
                                                         </span>
                                                         {c.email && (
-                                                            <span className="truncate text-xs text-gray-400">
+                                                            <span className="truncate text-xs text-slate-400">
                                                                 {c.email}
                                                             </span>
                                                         )}
@@ -277,24 +334,28 @@ export default function Index({ pedidos, usuario, clientes, filtros, flash }: Pr
                     </div>
                 )}
 
-
-                <Button onClick={filtrar}>
+                <Button onClick={filtrar} className={botonPrimario}>
                     <Search /> Filtrar
                 </Button>
-                <Button variant="outline" onClick={limpiar}>
+                <Button
+                    variant="outline"
+                    onClick={limpiar}
+                    className={botonContorno}
+                >
                     <X /> Limpiar
                 </Button>
             </div>
 
-            <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-900">
+            {/* Tabla */}
+            <div className="overflow-hidden rounded-xl border border-blue-100 bg-white shadow-sm dark:border-blue-900/50 dark:bg-slate-900">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left text-sm">
-                        <thead className="border-b border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800">
+                        <thead className="border-b border-blue-100 bg-blue-600 dark:border-blue-900/50 dark:bg-blue-900/70">
                             <tr>
                                 <th className="w-10 px-4 py-4">
                                     <input
                                         type="checkbox"
-                                        className="size-4"
+                                        className="size-4 accent-blue-300"
                                         checked={todos}
                                         onChange={alternarTodos}
                                         aria-label="Seleccionar todos"
@@ -304,13 +365,14 @@ export default function Index({ pedidos, usuario, clientes, filtros, flash }: Pr
                                     "ID",
                                     "Cliente",
                                     "Fecha",
+                                    "Estado",
                                     "Pagado",
                                     "Total",
                                     "Acciones",
                                 ].map((t) => (
                                     <th
                                         key={t}
-                                        className="px-6 py-4 font-semibold text-gray-700 dark:text-gray-200"
+                                        className="px-6 py-4 font-semibold text-white"
                                     >
                                         {t}
                                     </th>
@@ -320,125 +382,166 @@ export default function Index({ pedidos, usuario, clientes, filtros, flash }: Pr
 
                         <tbody>
                             {pedidos.length > 0 ? (
-                                pedidos.map((pedido) => (
-                                    <tr
-                                        key={pedido.id}
-                                        className="border-b border-gray-100 last:border-b-0 hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-gray-800"
-                                    >
-                                        <td className="px-4 py-4">
-                                            <input
-                                                type="checkbox"
-                                                className="size-4"
-                                                checked={seleccion.includes(
-                                                    pedido.id,
-                                                )}
-                                                onChange={() =>
-                                                    alternar(pedido.id)
-                                                }
-                                                aria-label={`Seleccionar pedido ${pedido.id}`}
-                                            />
-                                        </td>
-                                        <td className="px-6 py-4 text-gray-600 dark:text-gray-400">
-                                            {pedido.id}
-                                        </td>
-                                        <td className="px-6 py-4 text-gray-600 dark:text-gray-400">
-                                            {pedido.cliente.nombre}
-                                        </td>
-                                        <td className="px-6 py-4 text-gray-600 dark:text-gray-400">
-                                            {pedido.formato_fecha}
-                                        </td>
-                                        <td className="px-6 py-4 text-gray-600 dark:text-gray-400">
-                                            {pedido.pagado ? "Sí" : "No"}
-                                        </td>
-                                        <td className="px-6 py-4 text-gray-600 dark:text-gray-400">
-                                            ${Number(pedido.total).toFixed(2)}
-                                        </td>
+                                pedidos.map((pedido) => {
+                                    const estado = ESTADOS.find(
+                                        (e) => e.value === pedido.estado,
+                                    );
 
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center gap-2">
-                                                {usuario.role === 'admin' && (
-                                                    <Select
-                                                    value={pedido.estado}
-                                                    onValueChange={(valor) =>
-                                                        cambiarEstado(
-                                                            pedido,
-                                                            valor,
-                                                        )
+                                    return (
+                                        <tr
+                                            key={pedido.id}
+                                            className="border-b border-blue-50 transition-colors last:border-b-0 hover:bg-blue-50/70 dark:border-slate-800 dark:hover:bg-blue-950/40"
+                                        >
+                                            <td className="px-4 py-4">
+                                                <input
+                                                    type="checkbox"
+                                                    className="size-4 accent-blue-600"
+                                                    checked={seleccion.includes(
+                                                        pedido.id,
+                                                    )}
+                                                    onChange={() =>
+                                                        alternar(pedido.id)
                                                     }
+                                                    aria-label={`Seleccionar pedido ${pedido.id}`}
+                                                />
+                                            </td>
+                                            <td className="px-6 py-4 font-semibold text-blue-700 dark:text-blue-300">
+                                                #{pedido.id}
+                                            </td>
+                                            <td className="px-6 py-4 text-slate-700 dark:text-slate-300">
+                                                {pedido.cliente.nombre}
+                                            </td>
+                                            <td className="px-6 py-4 text-slate-600 dark:text-slate-400">
+                                                {pedido.formato_fecha}
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <span
+                                                    className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset ${estado?.clase ?? ""}`}
                                                 >
-                                                    <SelectTrigger className="h-8 w-[150px]">
-                                                        <SelectValue />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        {ESTADOS.map((e) => (
-                                                            <SelectItem
-                                                                key={e.value}
-                                                                value={e.value}
-                                                            >
-                                                                {e.label}
-                                                            </SelectItem>
-                                                        ))}
-                                                    </SelectContent>
-                                                </Select>
+                                                    {estado?.label ??
+                                                        pedido.estado}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <span
+                                                    className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset ${
+                                                        pedido.pagado
+                                                            ? "bg-blue-600 text-white ring-blue-600"
+                                                            : "bg-white text-slate-600 ring-slate-300 dark:bg-slate-900 dark:text-slate-400 dark:ring-slate-600"
+                                                    }`}
+                                                >
+                                                    {pedido.pagado
+                                                        ? "Pagado"
+                                                        : "Sin pagar"}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4 font-semibold tabular-nums text-slate-900 dark:text-white">
+                                                $
+                                                {Number(pedido.total).toFixed(
+                                                    2,
                                                 )}
+                                            </td>
 
-                                                <Button
-                                                    size="icon"
-                                                    variant="outline"
-                                                    className="h-8 w-8"
-                                                    title="Ver detalle"
-                                                    aria-label="Ver detalle"
-                                                    asChild
-                                                >
-                                                    <Link
-                                                        href={`/pedidos/${pedido.id}`}
-                                                    >
-                                                        <Eye />
-                                                    </Link>
-                                                </Button>
-
-                                                {!pedido.pagado && usuario.role === 'admin' &&(
-                                                    <>
-                                                        <Button
-                                                            size="icon"
-                                                            variant="outline"
-                                                            className="h-8 w-8"
-                                                            title="Editar ítems"
-                                                            aria-label="Editar ítems"
-                                                            asChild
-                                                        >
-                                                            <Link
-                                                                href={`/pedidos/${pedido.id}/editar-items`}
-                                                            >
-                                                                <Pencil />
-                                                            </Link>
-                                                        </Button>
-
-                                                        <Button
-                                                            size="icon"
-                                                            className="h-8 w-8"
-                                                            title="Marcar pagado"
-                                                            aria-label="Marcar pagado"
-                                                            onClick={() =>
-                                                                marcarPagado(
+                                            <td className="px-6 py-4">
+                                                <div className="flex items-center gap-2">
+                                                    {esAdmin && (
+                                                        <Select
+                                                            value={
+                                                                pedido.estado
+                                                            }
+                                                            onValueChange={(
+                                                                valor,
+                                                            ) =>
+                                                                cambiarEstado(
                                                                     pedido,
+                                                                    valor,
                                                                 )
                                                             }
                                                         >
-                                                            <Check />
-                                                        </Button>
-                                                    </>
-                                                )}
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))
+                                                            <SelectTrigger className="h-8 w-[150px] border-blue-200 dark:border-blue-800">
+                                                                <SelectValue />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                {ESTADOS.map(
+                                                                    (e) => (
+                                                                        <SelectItem
+                                                                            key={
+                                                                                e.value
+                                                                            }
+                                                                            value={
+                                                                                e.value
+                                                                            }
+                                                                        >
+                                                                            {
+                                                                                e.label
+                                                                            }
+                                                                        </SelectItem>
+                                                                    ),
+                                                                )}
+                                                            </SelectContent>
+                                                        </Select>
+                                                    )}
+
+                                                    <Button
+                                                        size="icon"
+                                                        variant="outline"
+                                                        className={`h-8 w-8 ${botonContorno}`}
+                                                        title="Ver detalle"
+                                                        aria-label="Ver detalle"
+                                                        asChild
+                                                    >
+                                                        <Link
+                                                            href={`/pedidos/${pedido.id}`}
+                                                        >
+                                                            <Eye />
+                                                        </Link>
+                                                    </Button>
+
+                                                    {!pedido.pagado &&
+                                                        esAdmin && (
+                                                            <>
+                                                                <Button
+                                                                    size="icon"
+                                                                    variant="outline"
+                                                                    className={`h-8 w-8 ${botonContorno}`}
+                                                                    title="Editar ítems"
+                                                                    aria-label="Editar ítems"
+                                                                    asChild
+                                                                >
+                                                                    <Link
+                                                                        href={`/pedidos/${pedido.id}/editar-items`}
+                                                                    >
+                                                                        <Pencil />
+                                                                    </Link>
+                                                                </Button>
+
+                                                                <Button
+                                                                    size="icon"
+                                                                    className={`h-8 w-8 ${botonPrimario}`}
+                                                                    title="Marcar pagado"
+                                                                    aria-label="Marcar pagado"
+                                                                    onClick={() =>
+                                                                        marcarPagado(
+                                                                            pedido,
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    <Check />
+                                                                </Button>
+                                                            </>
+                                                        )}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    );
+                                })
                             ) : (
                                 <tr>
                                     <td
                                         colSpan={8}
-                                        className="px-6 py-10 text-center text-gray-500 dark:text-gray-400"
+                                        className="px-6 py-12 text-center text-slate-500 dark:text-slate-400"
                                     >
+                                        <Package className="mx-auto mb-2 size-8 text-blue-300 dark:text-blue-800" />
                                         No hay pedidos registrados.
                                     </td>
                                 </tr>
