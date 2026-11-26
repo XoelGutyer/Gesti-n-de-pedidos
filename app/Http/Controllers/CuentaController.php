@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Models\Pedido;
+use Illuminate\Validation\Rule;
 
 class CuentaController extends Controller
 {
@@ -63,10 +64,31 @@ return Inertia::render('TiendaOnline/mi-cuenta', [
                 'id'              => $d->id,
                 'producto'        => $d->producto->nombre ?? 'Producto eliminado', // AJUSTAR
                 'cantidad'        => $d->cantidad,
-                'precio_unitario' => $d->precioProducto,                          // AJUSTAR
+                'precio_unitario' => $d->precioProducto,
+                'descuento'       => (int) $d->descuento,                          // AJUSTAR
                 'subtotal'        => $d->cantidad * $d->subtotal,                          // AJUSTAR
             ]),
         ],
     ]);
+}
+public function actualizarDatos(Request $request)
+{
+    $cliente = $request->user()->cliente;
+
+    abort_if(! $cliente, 404);
+
+    $datos = $request->validate([
+        'nombre'    => ['required', 'string', 'max:255'],
+        'direccion' => ['required', 'string', 'max:255'],
+        'celular'   => ['required', 'string', 'max:30'],
+        'dia'       => ['required', Rule::in([
+            'lunes', 'martes', 'miercoles', 'jueves',
+            'viernes', 'sabado', 'domingo',
+        ])],
+    ]);
+
+    $cliente->update($datos);
+
+    return back();
 }
 }

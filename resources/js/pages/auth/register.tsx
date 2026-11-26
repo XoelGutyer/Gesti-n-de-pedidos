@@ -59,6 +59,56 @@ export default function Register({ passwordRules }: Props) {
                             </div>
 
                             <div className="grid gap-2">
+    <Label htmlFor="direccion">Dirección</Label>
+    <Input
+        id="direccion"
+        type="text"
+        required
+        tabIndex={3}
+        autoComplete="street-address"
+        name="direccion"
+        placeholder="Calle y número"
+    />
+    <InputError message={errors.direccion} />
+</div>
+
+<div className="grid gap-2">
+    <Label htmlFor="celular">Celular</Label>
+    <Input
+        id="celular"
+        type="tel"
+        required
+        tabIndex={4}
+        autoComplete="tel"
+        name="celular"
+        placeholder="387 1234567"
+    />
+    <InputError message={errors.celular} />
+</div>
+
+<div className="grid gap-2">
+    <Label htmlFor="dia">Día de entrega</Label>
+    <select
+        id="dia"
+        name="dia"
+        required
+        tabIndex={5}
+        defaultValue=""
+        className="border-input bg-background h-9 w-full rounded-md border px-3 text-sm"
+    >
+        <option value="" disabled>Elegí un día</option>
+        <option value="lunes">Lunes</option>
+        <option value="martes">Martes</option>
+        <option value="miercoles">Miércoles</option>
+        <option value="jueves">Jueves</option>
+        <option value="viernes">Viernes</option>
+        <option value="sabado">Sábado</option>
+        <option value="domingo">Domingo</option>
+    </select>
+    <InputError message={errors.dia} />
+</div>
+
+                            <div className="grid gap-2">
                                 <Label htmlFor="password">Contraseña</Label>
                                 <PasswordInput
                                     id="password"

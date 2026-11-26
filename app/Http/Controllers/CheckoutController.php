@@ -206,6 +206,7 @@ private function iniciarPago(Pedido $pedido, MercadoPagoService $mp)
                     'nombre' => $d->producto?->nombre,
                     'cantidad' => $d->cantidad,
                     'precio' => $d->precioProducto,
+                    'descuento' => $d->descuento,
                     'subtotal' => $d->subtotal,
                 ]),
                 'pago'  => $request->query('pago'),          // success | pending | failure | null

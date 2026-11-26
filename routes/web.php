@@ -82,6 +82,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/pedidos/{pedido}/pagar', [CheckoutController::class, 'pagar'])->name('pedidos.pagar');
         Route::get('/mi-cuenta/pedidos/{pedido}', [CuentaController::class, 'pedido'])
     ->name('mi-cuenta.pedido');
+        Route::patch('/mi-cuenta/datos', [CuentaController::class, 'actualizarDatos'])
+    ->name('mi-cuenta.datos');
     });
 
     // ---------------------------------------------------------------
